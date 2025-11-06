@@ -1,6 +1,11 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:provider/provider.dart';
+import 'providers/weight_provider.dart';
+import 'main.dart';
 
 // Modèle simplifié de médicament
 class Medicament {
@@ -141,12 +146,15 @@ class Posologie {
       final doseMin = doseKgMin! * poids;
       final doseMax = doseKgMax! * poids;
       
+      // ignore: unnecessary_null_comparison
       if (doseMax != null) {
-        final doseMinFinal = doseMin > doseMax! ? doseMax : doseMin;
+        final doseMinFinal = doseMin > doseMax ? doseMax : doseMin;
         final doseMaxFinal = doseMax > doseMax ? doseMax : doseMax;
+        // ignore: unnecessary_brace_in_string_interps
         return '${_formatDoseAvecUnite(doseMinFinal, doseMaxFinal, unite)}\n(max ${doseMax} $unite)';
       }
       
+      // ignore: dead_code
       return _formatDoseAvecUnite(doseMin, doseMax, unite);
     } else {
       // Dose fixe
@@ -205,7 +213,6 @@ class TherapeutiqueScreen extends StatefulWidget {
 }
 
 class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
-  double weight = 10.0;
   List<Medicament> medicaments = [];
   List<Medicament> filteredMedicaments = [];
   final searchController = TextEditingController();
@@ -258,13 +265,8 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Thérapeutique Pédiatrique"),
-        backgroundColor: Colors.blue.shade100,
-      ),
       body: Column(
         children: [
-          _buildWeightSlider(),
           _buildSearchBar(),
           Expanded(
             child: isLoading
@@ -274,68 +276,6 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildWeightSlider() {
-    return Container(
-      color: Colors.blue.shade50,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          const Icon(Icons.monitor_weight, color: Colors.blue, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Slider(
-              value: _weightToSliderValue(weight),
-              min: 0,
-              max: 90,
-              divisions: 90,
-              activeColor: Colors.blue.shade600,
-              onChanged: (val) {
-                setState(() {
-                  weight = _sliderValueToWeight(val);
-                });
-              },
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            width: 80,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.shade200, width: 2),
-            ),
-            child: Text(
-              '${weight.toStringAsFixed(weight < 10 ? 1 : 0)} kg',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.blue,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  double _sliderValueToWeight(double sliderValue) {
-    if (sliderValue <= 40) {
-      return sliderValue * 0.25;
-    } else {
-      return 10 + (sliderValue - 40);
-    }
-  }
-
-  double _weightToSliderValue(double weight) {
-    if (weight <= 10) {
-      return weight / 0.25;
-    } else {
-      return 40 + (weight - 10);
-    }
   }
 
   Widget _buildSearchBar() {
@@ -405,10 +345,7 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => MedicamentDetailScreen(
-                  medicament: med,
-                  initialWeight: weight,
-                ),
+                builder: (_) => MedicamentDetailScreen(medicament: med),
               ),
             ),
           ),
@@ -418,150 +355,74 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
   }
 }
 
-class MedicamentDetailScreen extends StatefulWidget {
+class MedicamentDetailScreen extends StatelessWidget {
   final Medicament medicament;
-  final double initialWeight;
 
   const MedicamentDetailScreen({
     super.key,
     required this.medicament,
-    required this.initialWeight,
   });
-
-  @override
-  State<MedicamentDetailScreen> createState() => _MedicamentDetailScreenState();
-}
-
-class _MedicamentDetailScreenState extends State<MedicamentDetailScreen> {
-  late double weight;
-
-  @override
-  void initState() {
-    super.initState();
-    weight = widget.initialWeight;
-  }
-
-  double _sliderValueToWeight(double sliderValue) {
-    if (sliderValue <= 40) {
-      return sliderValue * 0.25;
-    } else {
-      return 10 + (sliderValue - 40);
-    }
-  }
-
-  double _weightToSliderValue(double weight) {
-    if (weight <= 10) {
-      return weight / 0.25;
-    } else {
-      return 40 + (weight - 10);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.medicament.nom),
+        title: Text(medicament.nom),
         backgroundColor: Colors.blue.shade100,
-      ),
-      body: Column(
-        children: [
-          _buildWeightSlider(),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSection(
-                      icon: Icons.medical_services,
-                      title: "Galénique",
-                      content: widget.medicament.galenique,
-                      color: Colors.blue,
-                    ),
-                    const SizedBox(height: 16),
-                    ...widget.medicament.indications.map((indication) =>
-                        _buildIndicationSection(indication)),
-                    if (widget.medicament.contreIndications != null) ...[
-                      const SizedBox(height: 16),
-                      _buildSection(
-                        icon: Icons.warning,
-                        title: "Contre-indications",
-                        content: widget.medicament.contreIndications!,
-                        color: Colors.red,
-                      ),
-                    ],
-                    if (widget.medicament.surdosage != null) ...[
-                      const SizedBox(height: 16),
-                      _buildSection(
-                        icon: Icons.info,
-                        title: "Surdosage",
-                        content: widget.medicament.surdosage!,
-                        color: Colors.orange,
-                      ),
-                    ],
-                    if (widget.medicament.aSavoir != null) ...[
-                      const SizedBox(height: 16),
-                      _buildSection(
-                        icon: Icons.lightbulb,
-                        title: "À savoir",
-                        content: widget.medicament.aSavoir!,
-                        color: Colors.green,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: Center(
+              child: GlobalWeightSelectorCompact(),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildWeightSlider() {
-    return Container(
-      color: Colors.blue.shade50,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          const Icon(Icons.monitor_weight, color: Colors.blue, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Slider(
-              value: _weightToSliderValue(weight),
-              min: 0,
-              max: 90,
-              divisions: 90,
-              activeColor: Colors.blue.shade600,
-              onChanged: (val) {
-                setState(() {
-                  weight = _sliderValueToWeight(val);
-                });
-              },
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            width: 80,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.shade200, width: 2),
-            ),
-            child: Text(
-              '${weight.toStringAsFixed(weight < 10 ? 1 : 0)} kg',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSection(
+                icon: Icons.medical_services,
+                title: "Galénique",
+                content: medicament.galenique,
                 color: Colors.blue,
               ),
-            ),
+              const SizedBox(height: 16),
+              ...medicament.indications.map((indication) =>
+                  _buildIndicationSection(context, indication)),
+              if (medicament.contreIndications != null) ...[
+                const SizedBox(height: 16),
+                _buildSection(
+                  icon: Icons.warning,
+                  title: "Contre-indications",
+                  content: medicament.contreIndications!,
+                  color: Colors.red,
+                ),
+              ],
+              if (medicament.surdosage != null) ...[
+                const SizedBox(height: 16),
+                _buildSection(
+                  icon: Icons.info,
+                  title: "Surdosage",
+                  content: medicament.surdosage!,
+                  color: Colors.orange,
+                ),
+              ],
+              if (medicament.aSavoir != null) ...[
+                const SizedBox(height: 16),
+                _buildSection(
+                  icon: Icons.lightbulb,
+                  title: "À savoir",
+                  content: medicament.aSavoir!,
+                  color: Colors.green,
+                ),
+              ],
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -603,19 +464,17 @@ class _MedicamentDetailScreenState extends State<MedicamentDetailScreen> {
     );
   }
 
-  Widget _buildIndicationSection(Indication indication) {
-    return IndicationCard(indication: indication, weight: weight);
+  Widget _buildIndicationSection(BuildContext context, Indication indication) {
+    return IndicationCard(indication: indication);
   }
 }
 
 class IndicationCard extends StatefulWidget {
   final Indication indication;
-  final double weight;
 
   const IndicationCard({
     super.key,
     required this.indication,
-    required this.weight,
   });
 
   @override
@@ -661,7 +520,7 @@ class _IndicationCardState extends State<IndicationCard> {
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 children: widget.indication.posologies.map((posologie) =>
-                    _buildPosologieCard(posologie)).toList(),
+                    _buildPosologieCard(context, posologie)).toList(),
               ),
             ),
         ],
@@ -669,81 +528,85 @@ class _IndicationCardState extends State<IndicationCard> {
     );
   }
 
-  Widget _buildPosologieCard(Posologie posologie) {
-    final doseCalculee = posologie.calculerDose(widget.weight);
-    
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade100,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              posologie.voie,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.blue.shade700,
+  Widget _buildPosologieCard(BuildContext context, Posologie posologie) {
+    return Consumer<WeightProvider>(
+      builder: (context, weightProvider, child) {
+        final doseCalculee = posologie.calculerDose(weightProvider.weight);
+        
+        return Container(
+          margin: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade100,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  posologie.voie,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue.shade700,
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.purple.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.purple.shade200, width: 2),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.calculate, color: Colors.purple, size: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    doseCalculee,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.purple,
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.purple.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.purple.shade200, width: 2),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calculate, color: Colors.purple, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        doseCalculee,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purple,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.amber.shade50,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.science, size: 16, color: Colors.amber),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    posologie.preparation,
-                    style: const TextStyle(fontStyle: FontStyle.italic),
-                  ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(4),
                 ),
-              ],
-            ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.science, size: 16, color: Colors.amber),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        posologie.preparation,
+                        style: const TextStyle(fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

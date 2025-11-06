@@ -209,12 +209,15 @@ class PosologieData {
       final doseMin = doseKgMin! * poids;
       final doseMax = doseKgMax! * poids;
       
+      // ignore: unnecessary_null_comparison
       if (doseMax != null) {
-        final doseMinFinal = doseMin > doseMax! ? doseMax : doseMin;
+        final doseMinFinal = doseMin > doseMax ? doseMax : doseMin;
         final doseMaxFinal = doseMax > doseMax ? doseMax : doseMax;
+        // ignore: unnecessary_brace_in_string_interps
         return '${_formatDoseAvecUnite(doseMinFinal, doseMaxFinal, unite)} (max ${doseMax} $unite)';
       }
       
+      // ignore: dead_code
       return _formatDoseAvecUnite(doseMin, doseMax, unite);
     } else {
       final dose = doseKg! * poids;

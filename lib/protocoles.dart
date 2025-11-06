@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:provider/provider.dart';
 import 'services/medicament_resolver.dart';
 import 'providers/weight_provider.dart';
+import 'main.dart';
 
 class Protocole {
   final String nom;
@@ -239,6 +240,14 @@ class ProtocoleDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(protocole.nom),
         backgroundColor: Colors.orange.shade100,
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: Center(
+              child: GlobalWeightSelectorCompact(),
+            ),
+          ),
+        ],
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
