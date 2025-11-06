@@ -50,20 +50,54 @@ class Indication {
   }
 }
 
-class Posologie {
-  final String voie;
+class TranchePosologie {
+  final double? poidsMin;
+  final double? poidsMax;
   final double doseKg;
   final double? doseKgMin;
   final double? doseKgMax;
+
+  TranchePosologie({
+    this.poidsMin,
+    this.poidsMax,
+    required this.doseKg,
+    this.doseKgMin,
+    this.doseKgMax,
+  });
+
+  factory TranchePosologie.fromJson(Map<String, dynamic> json) {
+    return TranchePosologie(
+      poidsMin: json['poidsMin']?.toDouble(),
+      poidsMax: json['poidsMax']?.toDouble(),
+      doseKg: (json['doseKg'] ?? 0).toDouble(),
+      doseKgMin: json['doseKgMin']?.toDouble(),
+      doseKgMax: json['doseKgMax']?.toDouble(),
+    );
+  }
+
+  bool appliqueAPoids(double poids) {
+    if (poidsMin != null && poids < poidsMin!) return false;
+    if (poidsMax != null && poids > poidsMax!) return false;
+    return true;
+  }
+}
+
+class Posologie {
+  final String voie;
+  final double? doseKg;
+  final double? doseKgMin;
+  final double? doseKgMax;
+  final List<TranchePosologie>? tranches;
   final String unite;
   final String preparation;
   final double? doseMax;
 
   Posologie({
     required this.voie,
-    required this.doseKg,
+    this.doseKg,
     this.doseKgMin,
     this.doseKgMax,
+    this.tranches,
     required this.unite,
     required this.preparation,
     this.doseMax,
@@ -72,9 +106,12 @@ class Posologie {
   factory Posologie.fromJson(Map<String, dynamic> json) {
     return Posologie(
       voie: json['voie'] ?? '',
-      doseKg: (json['doseKg'] ?? 0).toDouble(),
+      doseKg: json['doseKg']?.toDouble(),
       doseKgMin: json['doseKgMin']?.toDouble(),
       doseKgMax: json['doseKgMax']?.toDouble(),
+      tranches: (json['tranches'] as List?)
+          ?.map((t) => TranchePosologie.fromJson(t))
+          .toList(),
       unite: json['unite'] ?? '',
       preparation: json['preparation'] ?? '',
       doseMax: json['doseMax']?.toDouble(),
@@ -82,28 +119,72 @@ class Posologie {
   }
 
   String calculerDose(double poids) {
+    // Si tranches de poids définies
+    if (tranches != null && tranches!.isNotEmpty) {
+      final tranche = tranches!.firstWhere(
+        (t) => t.appliqueAPoids(poids),
+        orElse: () => tranches!.first,
+      );
+      
+      if (tranche.doseKgMin != null && tranche.doseKgMax != null) {
+        final doseMin = tranche.doseKgMin! * poids;
+        final doseMax = tranche.doseKgMax! * poids;
+        return _formatDoseAvecUnite(doseMin, doseMax, unite);
+      } else {
+        final dose = tranche.doseKg * poids;
+        return _formatDoseAvecUnite(dose, null, unite);
+      }
+    }
+    
+    // Sinon, dose variable globale
     if (doseKgMin != null && doseKgMax != null) {
-      // Dose variable
       final doseMin = doseKgMin! * poids;
       final doseMax = doseKgMax! * poids;
       
-      if (this.doseMax != null) {
-        final doseMinFinal = doseMin > this.doseMax! ? this.doseMax! : doseMin;
-        final doseMaxFinal = doseMax > this.doseMax! ? this.doseMax! : doseMax;
-        return '${doseMinFinal.toStringAsFixed(1)} - ${doseMaxFinal.toStringAsFixed(1)} $unite\n(max ${this.doseMax} $unite)';
+      if (doseMax != null) {
+        final doseMinFinal = doseMin > doseMax! ? doseMax : doseMin;
+        final doseMaxFinal = doseMax > doseMax ? doseMax : doseMax;
+        return '${_formatDoseAvecUnite(doseMinFinal, doseMaxFinal, unite)}\n(max ${doseMax} $unite)';
       }
       
-      return '${doseMin.toStringAsFixed(1)} - ${doseMax.toStringAsFixed(1)} $unite';
+      return _formatDoseAvecUnite(doseMin, doseMax, unite);
     } else {
       // Dose fixe
-      final dose = doseKg * poids;
+      final dose = doseKg! * poids;
       
-      if (this.doseMax != null && dose > this.doseMax!) {
-        return '${this.doseMax!.toStringAsFixed(1)} $unite (max atteint)';
+      if (doseMax != null && dose > doseMax!) {
+        return '${_formatDoseAvecUnite(doseMax!, null, unite)} (max atteint)';
       }
       
-      return '${dose.toStringAsFixed(1)} $unite';
+      return _formatDoseAvecUnite(dose, null, unite);
     }
+  }
+
+  String _formatDoseAvecUnite(double dose1, double? dose2, String uniteOriginale) {
+    // Conversion mg <-> µg
+    if (uniteOriginale == 'mg') {
+      if (dose1 < 0.1) {
+        // Convertir en µg
+        if (dose2 != null) {
+          return '${(dose1 * 1000).toStringAsFixed(0)} - ${(dose2 * 1000).toStringAsFixed(0)} µg';
+        }
+        return '${(dose1 * 1000).toStringAsFixed(0)} µg';
+      }
+    } else if (uniteOriginale == 'µg') {
+      if (dose1 > 999) {
+        // Convertir en mg
+        if (dose2 != null) {
+          return '${(dose1 / 1000).toStringAsFixed(1)} - ${(dose2 / 1000).toStringAsFixed(1)} mg';
+        }
+        return '${(dose1 / 1000).toStringAsFixed(1)} mg';
+      }
+    }
+    
+    // Format normal
+    if (dose2 != null) {
+      return '${dose1.toStringAsFixed(1)} - ${dose2.toStringAsFixed(1)} $uniteOriginale';
+    }
+    return '${dose1.toStringAsFixed(1)} $uniteOriginale';
   }
 }
 
@@ -198,52 +279,17 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
   Widget _buildWeightSlider() {
     return Container(
       color: Colors.blue.shade50,
-      padding: const EdgeInsets.all(16),
-      child: Column(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.monitor_weight, color: Colors.blue),
-                  SizedBox(width: 8),
-                  Text(
-                    'Poids:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200, width: 2),
-                ),
-                child: Text(
-                  '${weight.toStringAsFixed(weight < 10 ? 1 : 0)} kg',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.blue,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 4.0,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10.0),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 20.0),
-            ),
+          const Icon(Icons.monitor_weight, color: Colors.blue, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
             child: Slider(
               value: _weightToSliderValue(weight),
               min: 0,
-              max: 100,
-              divisions: 100,
+              max: 90,
+              divisions: 90,
               activeColor: Colors.blue.shade600,
               onChanged: (val) {
                 setState(() {
@@ -252,42 +298,38 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
               },
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '0 kg',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          const SizedBox(width: 12),
+          Container(
+            width: 80,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.shade200, width: 2),
+            ),
+            child: Text(
+              '${weight.toStringAsFixed(weight < 10 ? 1 : 0)} kg',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.blue,
               ),
-              Text(
-                '10 kg',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-              Text(
-                '50 kg',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-            ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  // Conversion curseur → poids
-  // 0-40: de 0 à 10 kg par pas de 0.1 kg (100 g)
-  // 40-100: de 10 à 50 kg par pas de 1 kg
   double _sliderValueToWeight(double sliderValue) {
     if (sliderValue <= 40) {
-      // 0 à 10 kg (par 100g)
-      return sliderValue * 0.25; // 40 divisions pour 10 kg
+      return sliderValue * 0.25;
     } else {
-      // 10 à 50 kg (par kg)
-      return 10 + (sliderValue - 40); // 60 divisions pour 40 kg
+      return 10 + (sliderValue - 40);
     }
   }
 
-  // Conversion poids → curseur
   double _weightToSliderValue(double weight) {
     if (weight <= 10) {
       return weight / 0.25;
@@ -481,58 +523,42 @@ class _MedicamentDetailScreenState extends State<MedicamentDetailScreen> {
   Widget _buildWeightSlider() {
     return Container(
       color: Colors.blue.shade50,
-      padding: const EdgeInsets.all(16),
-      child: Column(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.monitor_weight, color: Colors.blue),
-                  SizedBox(width: 8),
-                  Text(
-                    'Poids:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200, width: 2),
-                ),
-                child: Text(
-                  '${weight.toStringAsFixed(weight < 10 ? 1 : 0)} kg',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.blue,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 4.0,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10.0),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 20.0),
-            ),
+          const Icon(Icons.monitor_weight, color: Colors.blue, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
             child: Slider(
               value: _weightToSliderValue(weight),
               min: 0,
-              max: 100,
-              divisions: 100,
+              max: 90,
+              divisions: 90,
               activeColor: Colors.blue.shade600,
               onChanged: (val) {
                 setState(() {
                   weight = _sliderValueToWeight(val);
                 });
               },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            width: 80,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.shade200, width: 2),
+            ),
+            child: Text(
+              '${weight.toStringAsFixed(weight < 10 ? 1 : 0)} kg',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.blue,
+              ),
             ),
           ),
         ],
@@ -578,43 +604,73 @@ class _MedicamentDetailScreenState extends State<MedicamentDetailScreen> {
   }
 
   Widget _buildIndicationSection(Indication indication) {
+    return IndicationCard(indication: indication, weight: weight);
+  }
+}
+
+class IndicationCard extends StatefulWidget {
+  final Indication indication;
+  final double weight;
+
+  const IndicationCard({
+    super.key,
+    required this.indication,
+    required this.weight,
+  });
+
+  @override
+  State<IndicationCard> createState() => _IndicationCardState();
+}
+
+class _IndicationCardState extends State<IndicationCard> {
+  bool isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.green.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.green.withOpacity(0.3)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.local_hospital, color: Colors.green, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  indication.label,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                ),
+          ListTile(
+            leading: const Icon(Icons.local_hospital, color: Colors.green, size: 20),
+            title: Text(
+              widget.indication.label,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
               ),
-            ],
+            ),
+            trailing: Icon(
+              isExpanded ? Icons.expand_less : Icons.expand_more,
+              color: Colors.green,
+            ),
+            onTap: () {
+              setState(() {
+                isExpanded = !isExpanded;
+              });
+            },
           ),
-          const SizedBox(height: 12),
-          ...indication.posologies.map((posologie) =>
-              _buildPosologieCard(posologie)),
+          if (isExpanded)
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                children: widget.indication.posologies.map((posologie) =>
+                    _buildPosologieCard(posologie)).toList(),
+              ),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildPosologieCard(Posologie posologie) {
-    final doseCalculee = posologie.calculerDose(weight);
+    final doseCalculee = posologie.calculerDose(widget.weight);
     
     return Container(
       margin: const EdgeInsets.only(top: 8),
@@ -627,24 +683,19 @@ class _MedicamentDetailScreenState extends State<MedicamentDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade100,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  posologie.voie,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade700,
-                  ),
-                ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade100,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              posologie.voie,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.blue.shade700,
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 12),
           Container(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'therapeutique.dart';
 import 'annuaire.dart';
+import 'protocoles.dart';
 
 void main() {
   runApp(const PediatricApp());
@@ -35,6 +36,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _pages = [
     const TherapeutiqueScreen(),
+    const ProtocolesScreen(),
     const AnnuaireScreen(),
   ];
 
@@ -53,6 +55,10 @@ class _MainScreenState extends State<MainScreen> {
           NavigationDestination(
             icon: Icon(Icons.medication),
             label: 'Thérapeutique',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.description),
+            label: 'Protocoles',
           ),
           NavigationDestination(
             icon: Icon(Icons.contacts),

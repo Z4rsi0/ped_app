@@ -26,6 +26,9 @@ flutter:
     - assets/
     - assets/medicaments_pediatrie.json
     - assets/annuaire.json
+    - assets/protocoles/
+    - assets/protocoles/etat_de_mal_epileptique.json
+    - assets/protocoles/arret_cardio_respiratoire.json
     - assets/icon/icon.png
 
 flutter_launcher_icons:

@@ -1,60 +1,25 @@
 [
   {
-    "nom": "Adrénaline",
-    "galenique": "Ampoule 1 mg/1 mL",
-    "indications": [
-      {
-        "label": "Arrêt cardiaque",
-        "posologies": [
-          {
-            "voie": "IV/IO",
-            "doseKg": 10,
-            "unite": "µg",
-            "doseMax": 1000,
-            "preparation": "Dilution 1:10 000 - Répéter toutes les 3-5 min"
-          }
-        ]
-      },
-      {
-        "label": "Anaphylaxie",
-        "posologies": [
-          {
-            "voie": "IM",
-            "doseKg": 10,
-            "unite": "µg",
-            "doseMax": 500,
-            "preparation": "IM cuisse externe - 0.15 mg si <15 kg, 0.3 mg si 15-30 kg, 0.5 mg si >30 kg"
-          }
-        ]
-      },
-      {
-        "label": "Perfusion continue",
-        "posologies": [
-          {
-            "voie": "IVSE",
-            "doseKgMin": 0.1,
-            "doseKgMax": 1,
-            "doseKg": 0.5,
-            "unite": "µg/kg/min",
-            "preparation": "Diluer 1 amp (1 mg) dans 9 mL NaCl = 100 µg/mL"
-          }
-        ]
-      }
-    ],
-    "contreIndications": "Aucune en urgence vitale",
-    "surdosage": "Arythmie, HTA sévère, ischémie myocardique",
-    "aSavoir": "Surveillance continue de la PA et FC"
-  },
-  {
     "nom": "Paracétamol",
-    "galenique": "Solution buvable 100 mg/mL, suppositoire",
+    "galenique": "Solution buvable 100 mg/mL, suppositoire, IV 10 mg/mL",
     "indications": [
       {
-        "label": "Douleur / Fièvre",
+        "label": "Douleur / Fièvre (Per os / Rectal)",
         "posologies": [
           {
             "voie": "Per os / Rectal",
-            "doseKg": 15,
+            "tranches": [
+              {
+                "poidsMax": 10,
+                "doseKg": 7.5,
+                "unite": "mg"
+              },
+              {
+                "poidsMin": 10,
+                "doseKg": 15,
+                "unite": "mg"
+              }
+            ],
             "unite": "mg",
             "doseMax": 1000,
             "preparation": "Toutes les 6h - Max 60 mg/kg/jour"
@@ -66,7 +31,18 @@
         "posologies": [
           {
             "voie": "IV",
-            "doseKg": 15,
+            "tranches": [
+              {
+                "poidsMax": 10,
+                "doseKg": 7.5,
+                "unite": "mg"
+              },
+              {
+                "poidsMin": 10,
+                "doseKg": 15,
+                "unite": "mg"
+              }
+            ],
             "unite": "mg",
             "doseMax": 1000,
             "preparation": "Perfusion IV 15 min - Toutes les 6h"
@@ -77,6 +53,51 @@
     "contreIndications": "Insuffisance hépatique sévère",
     "surdosage": "Toxicité hépatique - Antidote: N-acétylcystéine",
     "aSavoir": "Respecter intervalle de 6h entre les prises"
+  },
+  {
+    "nom": "Adrénaline",
+    "galenique": "Ampoule 1 mg/1 mL",
+    "indications": [
+      {
+        "label": "Arrêt cardiaque",
+        "posologies": [
+          {
+            "voie": "IV/IO",
+            "doseKg": 0.01,
+            "unite": "mg",
+            "doseMax": 1,
+            "preparation": "Dilution 1:10 000 - Répéter toutes les 3-5 min"
+          }
+        ]
+      },
+      {
+        "label": "Anaphylaxie",
+        "posologies": [
+          {
+            "voie": "IM",
+            "doseKg": 0.01,
+            "unite": "mg",
+            "doseMax": 0.5,
+            "preparation": "IM cuisse externe - 0.15 mg si <15 kg, 0.3 mg si 15-30 kg, 0.5 mg si >30 kg"
+          }
+        ]
+      },
+      {
+        "label": "Perfusion continue",
+        "posologies": [
+          {
+            "voie": "IVSE",
+            "doseKgMin": 0.1,
+            "doseKgMax": 1,
+            "unite": "µg/kg/min",
+            "preparation": "Diluer 1 amp (1 mg) dans 9 mL NaCl = 100 µg/mL"
+          }
+        ]
+      }
+    ],
+    "contreIndications": "Aucune en urgence vitale",
+    "surdosage": "Arythmie, HTA sévère, ischémie myocardique",
+    "aSavoir": "Surveillance continue de la PA et FC"
   },
   {
     "nom": "Midazolam",
@@ -98,13 +119,6 @@
             "unite": "mg",
             "doseMax": 10,
             "preparation": "0.2-0.3 mL dans chaque narine"
-          },
-          {
-            "voie": "Intramusculaire",
-            "doseKg": 0.2,
-            "unite": "mg",
-            "doseMax": 10,
-            "preparation": "IM si pas d'accès veineux"
           }
         ]
       },
@@ -115,7 +129,6 @@
             "voie": "IV",
             "doseKgMin": 0.05,
             "doseKgMax": 0.2,
-            "doseKg": 0.1,
             "unite": "mg",
             "doseMax": 5,
             "preparation": "Titration par 0.05 mg/kg toutes les 2-3 min"
@@ -150,7 +163,6 @@
             "voie": "IVSE",
             "doseKgMin": 10,
             "doseKgMax": 40,
-            "doseKg": 20,
             "unite": "µg/kg/h",
             "preparation": "Seringue électrique - Surveillance continue"
           }
@@ -166,26 +178,14 @@
     "galenique": "Ampoule 150 mg/3 mL",
     "indications": [
       {
-        "label": "Tachycardie ventriculaire",
-        "posologies": [
-          {
-            "voie": "IV",
-            "doseKg": 5,
-            "unite": "mg",
-            "doseMax": 300,
-            "preparation": "Bolus sur 20-60 min dans G5% - Pas de NaCl"
-          }
-        ]
-      },
-      {
-        "label": "Fibrillation ventriculaire réfractaire",
+        "label": "Tachycardie ventriculaire / FV réfractaire",
         "posologies": [
           {
             "voie": "IV/IO",
             "doseKg": 5,
             "unite": "mg",
             "doseMax": 300,
-            "preparation": "Bolus rapide après 3ème choc électrique"
+            "preparation": "Bolus sur 20-60 min dans G5% - Pas de NaCl"
           }
         ]
       }
@@ -205,7 +205,6 @@
             "voie": "IV",
             "doseKgMin": 1,
             "doseKgMax": 2,
-            "doseKg": 1.5,
             "unite": "mg",
             "preparation": "Injection lente sur 60 sec"
           },
@@ -213,7 +212,6 @@
             "voie": "IM",
             "doseKgMin": 4,
             "doseKgMax": 6,
-            "doseKg": 5,
             "unite": "mg",
             "preparation": "IM si pas d'accès veineux"
           }
@@ -226,7 +224,6 @@
             "voie": "IV",
             "doseKgMin": 0.5,
             "doseKgMax": 1,
-            "doseKg": 0.75,
             "unite": "mg",
             "preparation": "Dose sub-dissociative - Titration"
           }
@@ -248,7 +245,6 @@
             "voie": "IV",
             "doseKgMin": 1,
             "doseKgMax": 3,
-            "doseKg": 2,
             "unite": "µg",
             "preparation": "Bolus lent - Titration toutes les 5 min"
           }
@@ -261,7 +257,6 @@
             "voie": "IVSE",
             "doseKgMin": 1,
             "doseKgMax": 5,
-            "doseKg": 2,
             "unite": "µg/kg/h",
             "preparation": "Seringue électrique"
           }
@@ -271,38 +266,5 @@
     "contreIndications": "Insuffisance respiratoire non ventilée",
     "surdosage": "Dépression respiratoire, rigidité thoracique - Naloxone",
     "aSavoir": "100x plus puissant que morphine - Courte durée d'action"
-  },
-  {
-    "nom": "Hydrocortisone",
-    "galenique": "Flacon 100 mg",
-    "indications": [
-      {
-        "label": "Insuffisance surrénale aiguë",
-        "posologies": [
-          {
-            "voie": "IV",
-            "doseKg": 2,
-            "unite": "mg",
-            "doseMax": 100,
-            "preparation": "Bolus IV puis relais toutes les 6h"
-          }
-        ]
-      },
-      {
-        "label": "Choc septique réfractaire",
-        "posologies": [
-          {
-            "voie": "IV",
-            "doseKg": 2,
-            "unite": "mg",
-            "doseMax": 50,
-            "preparation": "Toutes les 6h si choc catécholamine-résistant"
-          }
-        ]
-      }
-    ],
-    "contreIndications": "Aucune en urgence",
-    "surdosage": "Hyperglycémie, HTA",
-    "aSavoir": "Corticoïde de choix chez l'enfant"
   }
 ]
