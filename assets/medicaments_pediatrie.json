@@ -7,10 +7,10 @@
         "label": "Douleur / Fièvre (Per os / Rectal)",
         "posologies": [
           {
-            "voie": "Per os / Rectal",
+            "voie": "Per os",
             "tranches": [
               {
-                "poidsMax": 10,
+                "poidsMax": 9.9,
                 "doseKg": 7.5,
                 "unite": "mg"
               },
@@ -22,7 +22,7 @@
             ],
             "unite": "mg",
             "doseMax": 1000,
-            "preparation": "Toutes les 6h - Max 60 mg/kg/jour"
+            "preparation": "Toutes les 6h"
           }
         ]
       },

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/services.dart' show rootBundle;
+import 'data_sync_service.dart';
 
 class MedicamentResolver {
   static final MedicamentResolver _instance = MedicamentResolver._internal();
@@ -12,7 +12,7 @@ class MedicamentResolver {
   Future<void> loadMedicaments() async {
     if (_isLoaded) return;
     
-    final data = await rootBundle.loadString('assets/medicaments_pediatrie.json');
+    final data = await DataSyncService.readFile('assets/medicaments_pediatrie.json');
     final List<dynamic> jsonList = json.decode(data);
     _medicaments = jsonList.map((json) => MedicamentData.fromJson(json)).toList();
     _isLoaded = true;

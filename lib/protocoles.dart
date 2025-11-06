@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:provider/provider.dart';
 import 'services/medicament_resolver.dart';
 import 'providers/weight_provider.dart';
 import 'main.dart';
+import 'services/data_sync_service.dart';
 
 class Protocole {
   final String nom;
@@ -103,7 +103,7 @@ Future<List<String>> loadProtocolesList() async {
 }
 
 Future<Protocole> loadProtocole(String filename) async {
-  final data = await rootBundle.loadString('assets/protocoles/$filename.json');
+  final data = await DataSyncService.readFile('assets/protocoles/$filename.json');
   final jsonData = json.decode(data);
   return Protocole.fromJson(jsonData);
 }

@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:url_launcher/url_launcher.dart';
 import 'models/annuaire_model.dart'; 
+import 'services/data_sync_service.dart';
 
 // Chargement de l'annuaire depuis le JSON
 Future<Annuaire> loadAnnuaire() async {
-  final data = await rootBundle.loadString('assets/annuaire.json');
+  final data = await DataSyncService.readFile('annuaire.json');
   final Map<String, dynamic> jsonData = json.decode(data);
   return Annuaire.fromJson(jsonData);
 }

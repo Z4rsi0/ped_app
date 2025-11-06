@@ -4,6 +4,7 @@ import 'therapeutique.dart';
 import 'annuaire.dart';
 import 'protocoles.dart';
 import 'providers/weight_provider.dart';
+import 'services/data_sync_service.dart';
 
 void main() {
   runApp(
@@ -25,8 +26,119 @@ class PediatricApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const MainScreen(),
+      home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  String _status = 'Initialisation...';
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    // Vérifier connexion Internet
+    setState(() => _status = 'Vérification de la connexion...');
+    final hasInternet = await DataSyncService.hasInternetConnection();
+
+    if (hasInternet) {
+      // Synchroniser les données
+      setState(() => _status = 'Mise à jour des données...');
+      final result = await DataSyncService.syncAllData();
+      
+      if (result.hasErrors) {
+        setState(() {
+          _status = result.message;
+          _hasError = true;
+        });
+        await Future.delayed(const Duration(seconds: 2));
+      }
+    } else {
+      setState(() => _status = 'Mode hors ligne - Utilisation des données locales');
+      await Future.delayed(const Duration(seconds: 1));
+    }
+
+    // Navigation vers l'écran principal
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.blue.shade400, Colors.blue.shade800],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.medical_services,
+                size: 80,
+                color: Colors.white,
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'MASSIO',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Thérapeutique Pédiatrique',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+              ),
+              const SizedBox(height: 48),
+              if (!_hasError)
+                const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                )
+              else
+                const Icon(Icons.warning_amber, color: Colors.orange, size: 40),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  _status,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: _hasError ? Colors.orange.shade200 : Colors.white70,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

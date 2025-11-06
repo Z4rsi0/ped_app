@@ -1,11 +1,9 @@
-// ignore_for_file: deprecated_member_use
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:provider/provider.dart';
 import 'providers/weight_provider.dart';
 import 'main.dart';
+import 'services/data_sync_service.dart';
 
 // Modèle simplifié de médicament
 class Medicament {
@@ -146,15 +144,12 @@ class Posologie {
       final doseMin = doseKgMin! * poids;
       final doseMax = doseKgMax! * poids;
       
-      // ignore: unnecessary_null_comparison
       if (doseMax != null) {
-        final doseMinFinal = doseMin > doseMax ? doseMax : doseMin;
+        final doseMinFinal = doseMin > doseMax! ? doseMax : doseMin;
         final doseMaxFinal = doseMax > doseMax ? doseMax : doseMax;
-        // ignore: unnecessary_brace_in_string_interps
         return '${_formatDoseAvecUnite(doseMinFinal, doseMaxFinal, unite)}\n(max ${doseMax} $unite)';
       }
       
-      // ignore: dead_code
       return _formatDoseAvecUnite(doseMin, doseMax, unite);
     } else {
       // Dose fixe
@@ -198,7 +193,7 @@ class Posologie {
 
 // Chargement des médicaments
 Future<List<Medicament>> loadMedicaments() async {
-  final data = await rootBundle.loadString('assets/medicaments_pediatrie.json');
+  final data = await DataSyncService.readFile('assets/medicaments_pediatrie.json');
   final List<dynamic> jsonList = json.decode(data);
   List<Medicament> meds = jsonList.map((json) => Medicament.fromJson(json)).toList();
   meds.sort((a, b) => a.nom.toLowerCase().compareTo(b.nom.toLowerCase()));
