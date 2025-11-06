@@ -74,36 +74,33 @@ class DataSyncService {
   }
 
   /// Lit un fichier (local en priorité, sinon assets)
-  static Future<String> readFile(String filename) async {
-    try {
-      // Essayer de lire le fichier local d'abord
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/$filename');
-      
-      if (await file.exists()) {
-        debugPrint('📖 Lecture locale: $filename');
-        return await file.readAsString();
-      }
-    } catch (e) {
-      debugPrint('⚠️ Erreur lecture locale de $filename: $e');
-    }
-
-    // Fallback sur les assets embarqués
-    debugPrint('📦 Fallback assets: $filename');
+static Future<String> readFile(String filename) async {
+  try {
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/$filename');
     
-    // Nettoyer le chemin pour les assets
-    String assetPath = filename;
-    if (!assetPath.startsWith('assets/')) {
-      assetPath = 'assets/$filename';
+    if (await file.exists()) {
+      debugPrint('📖 Lecture locale: $filename');
+      return await file.readAsString();
     }
-    
-    try {
-      return await rootBundle.loadString(assetPath);
-    } catch (e) {
-      debugPrint('❌ Erreur chargement asset $assetPath: $e');
-      rethrow;
-    }
+  } catch (e) {
+    debugPrint('⚠️ Erreur lecture locale de $filename: $e');
   }
+
+  // Fallback sur les assets embarqués
+  // Nettoyer complètement le chemin avant d'ajouter le préfixe
+  String assetPath = filename.replaceAll(RegExp(r'^(assets/)+'), '');
+  assetPath = 'assets/$assetPath';
+  
+  debugPrint('📦 Fallback assets: $assetPath');
+  
+  try {
+    return await rootBundle.loadString(assetPath);
+  } catch (e) {
+    debugPrint('❌ Erreur chargement asset $assetPath: $e');
+    rethrow;
+  }
+}
 
   /// Force le téléchargement d'un fichier spécifique
   static Future<bool> forceDownloadFile(String filename) async {
