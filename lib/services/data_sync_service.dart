@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
@@ -9,8 +10,8 @@ class DataSyncService {
   static const Map<String, String> files = {
     'medicaments_pediatrie.json': '$githubBaseUrl/medicaments_pediatrie.json',
     'annuaire.json': '$githubBaseUrl/annuaire.json',
-    'etat_de_mal_epileptique.json': '$githubBaseUrl/protocoles/etat_de_mal_epileptique.json',
-    'arret_cardio_respiratoire.json': '$githubBaseUrl/protocoles/arret_cardio_respiratoire.json',
+    'protocoles/etat_de_mal_epileptique.json': '$githubBaseUrl/protocoles/etat_de_mal_epileptique.json',
+    'protocoles/arret_cardio_respiratoire.json': '$githubBaseUrl/protocoles/arret_cardio_respiratoire.json',
   };
 
   /// Vérifie et synchronise tous les fichiers au démarrage
@@ -89,7 +90,19 @@ class DataSyncService {
 
     // Fallback sur les assets embarqués
     debugPrint('📦 Fallback assets: $filename');
-    return await DataSyncService.readFile('assets/$filename');
+    
+    // Nettoyer le chemin pour les assets
+    String assetPath = filename;
+    if (!assetPath.startsWith('assets/')) {
+      assetPath = 'assets/$filename';
+    }
+    
+    try {
+      return await rootBundle.loadString(assetPath);
+    } catch (e) {
+      debugPrint('❌ Erreur chargement asset $assetPath: $e');
+      rethrow;
+    }
   }
 
   /// Force le téléchargement d'un fichier spécifique
@@ -152,4 +165,3 @@ class SyncResult {
     }
   }
 }
-

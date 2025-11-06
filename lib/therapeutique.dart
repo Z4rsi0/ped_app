@@ -58,25 +58,28 @@ class Indication {
 class TranchePosologie {
   final double? poidsMin;
   final double? poidsMax;
-  final double doseKg;
+  final double? doseKg;
   final double? doseKgMin;
   final double? doseKgMax;
+  final String? doses; // Pour les schémas complexes comme "S0: 80 mg, S2: 40 mg..."
 
   TranchePosologie({
     this.poidsMin,
     this.poidsMax,
-    required this.doseKg,
+    this.doseKg,
     this.doseKgMin,
     this.doseKgMax,
+    this.doses,
   });
 
   factory TranchePosologie.fromJson(Map<String, dynamic> json) {
     return TranchePosologie(
-      poidsMin: json['poidsMin']?.toDouble(),
-      poidsMax: json['poidsMax']?.toDouble(),
-      doseKg: (json['doseKg'] ?? 0).toDouble(),
-      doseKgMin: json['doseKgMin']?.toDouble(),
-      doseKgMax: json['doseKgMax']?.toDouble(),
+      poidsMin: _parseDouble(json['poidsMin']),
+      poidsMax: _parseDouble(json['poidsMax']),
+      doseKg: _parseDouble(json['doseKg']),
+      doseKgMin: _parseDouble(json['doseKgMin']),
+      doseKgMax: _parseDouble(json['doseKgMax']),
+      doses: json['doses']?.toString(),
     );
   }
 
@@ -84,6 +87,20 @@ class TranchePosologie {
     if (poidsMin != null && poids < poidsMin!) return false;
     if (poidsMax != null && poids > poidsMax!) return false;
     return true;
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   }
 }
 
@@ -95,7 +112,7 @@ class Posologie {
   final List<TranchePosologie>? tranches;
   final String unite;
   final String preparation;
-  final double? doseMax;
+  final dynamic doseMax; // peut être String ou double
 
   Posologie({
     required this.voie,
@@ -111,16 +128,30 @@ class Posologie {
   factory Posologie.fromJson(Map<String, dynamic> json) {
     return Posologie(
       voie: json['voie'] ?? '',
-      doseKg: json['doseKg']?.toDouble(),
-      doseKgMin: json['doseKgMin']?.toDouble(),
-      doseKgMax: json['doseKgMax']?.toDouble(),
+      doseKg: _parseDouble(json['doseKg']),
+      doseKgMin: _parseDouble(json['doseKgMin']),
+      doseKgMax: _parseDouble(json['doseKgMax']),
       tranches: (json['tranches'] as List?)
           ?.map((t) => TranchePosologie.fromJson(t))
           .toList(),
       unite: json['unite'] ?? '',
       preparation: json['preparation'] ?? '',
-      doseMax: json['doseMax']?.toDouble(),
+      doseMax: json['doseMax'], // Garder tel quel
     );
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   }
 
   String calculerDose(double poids) {
@@ -131,12 +162,17 @@ class Posologie {
         orElse: () => tranches!.first,
       );
       
+      // Si la tranche contient un schéma de doses textuelles
+      if (tranche.doses != null) {
+        return tranche.doses!;
+      }
+      
       if (tranche.doseKgMin != null && tranche.doseKgMax != null) {
         final doseMin = tranche.doseKgMin! * poids;
         final doseMax = tranche.doseKgMax! * poids;
         return _formatDoseAvecUnite(doseMin, doseMax, unite);
-      } else {
-        final dose = tranche.doseKg * poids;
+      } else if (tranche.doseKg != null) {
+        final dose = tranche.doseKg! * poids;
         return _formatDoseAvecUnite(dose, null, unite);
       }
     }
@@ -146,23 +182,35 @@ class Posologie {
       final doseMin = doseKgMin! * poids;
       final doseMax = doseKgMax! * poids;
       
-      if (doseMax != null) {
-        final doseMinFinal = doseMin > doseMax ? doseMax : doseMin;
-        final doseMaxFinal = doseMax > doseMax ? doseMax : doseMax;
-        return '${_formatDoseAvecUnite(doseMinFinal, doseMaxFinal, unite)}\n(max ${doseMax} $unite)';
+      // Gestion de la dose max
+      double? doseMaxDouble = _parseDouble(doseMax);
+      if (doseMaxDouble != null) {
+        final doseMinFinal = doseMin > doseMaxDouble ? doseMaxDouble : doseMin;
+        final doseMaxFinal = doseMax > doseMaxDouble ? doseMaxDouble : doseMax;
+        return '${_formatDoseAvecUnite(doseMinFinal, doseMaxFinal, unite)}\n(max ${_formatDoseMaximale(doseMax)})';
       }
       
       return _formatDoseAvecUnite(doseMin, doseMax, unite);
-    } else {
+    } else if (doseKg != null) {
       // Dose fixe
       final dose = doseKg! * poids;
       
-      if (doseMax != null && dose > doseMax!) {
-        return '${_formatDoseAvecUnite(doseMax!, null, unite)} (max atteint)';
+      double? doseMaxDouble = _parseDouble(doseMax);
+      if (doseMaxDouble != null && dose > doseMaxDouble) {
+        return '${_formatDoseAvecUnite(doseMaxDouble, null, unite)} (max atteint)';
       }
       
       return _formatDoseAvecUnite(dose, null, unite);
     }
+    
+    return "Dose non calculable";
+  }
+
+  String _formatDoseMaximale(dynamic doseMax) {
+    if (doseMax == null) return '';
+    if (doseMax is String) return doseMax;
+    if (doseMax is num) return '${doseMax.toStringAsFixed(0)} $unite';
+    return doseMax.toString();
   }
 
   String _formatDoseAvecUnite(double dose1, double? dose2, String uniteOriginale) {
