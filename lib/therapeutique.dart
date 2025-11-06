@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_null_comparison, dead_code, unnecessary_brace_in_string_interps
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -145,7 +147,7 @@ class Posologie {
       final doseMax = doseKgMax! * poids;
       
       if (doseMax != null) {
-        final doseMinFinal = doseMin > doseMax! ? doseMax : doseMin;
+        final doseMinFinal = doseMin > doseMax ? doseMax : doseMin;
         final doseMaxFinal = doseMax > doseMax ? doseMax : doseMax;
         return '${_formatDoseAvecUnite(doseMinFinal, doseMaxFinal, unite)}\n(max ${doseMax} $unite)';
       }
@@ -193,7 +195,7 @@ class Posologie {
 
 // Chargement des médicaments
 Future<List<Medicament>> loadMedicaments() async {
-  final data = await DataSyncService.readFile('assets/medicaments_pediatrie.json');
+  final data = await DataSyncService.readFile('medicaments_pediatrie.json');
   final List<dynamic> jsonList = json.decode(data);
   List<Medicament> meds = jsonList.map((json) => Medicament.fromJson(json)).toList();
   meds.sort((a, b) => a.nom.toLowerCase().compareTo(b.nom.toLowerCase()));
@@ -431,9 +433,9 @@ class MedicamentDetailScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -484,9 +486,9 @@ class _IndicationCardState extends State<IndicationCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.1),
+        color: Colors.green.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.withOpacity(0.3)),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [

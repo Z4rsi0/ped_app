@@ -1,270 +1,1826 @@
 [
   {
-    "nom": "Paracétamol",
-    "galenique": "Solution buvable 100 mg/mL, suppositoire, IV 10 mg/mL",
+    "nom": "Acétazolamide",
+    "nomCommercial": "DIAMOX",
+    "galenique": "Lyophilisat 500 mg + solvant 5 mL",
     "indications": [
       {
-        "label": "Douleur / Fièvre (Per os / Rectal)",
+        "label": "Diurétique, anti-hypertenseur oculaire",
         "posologies": [
           {
-            "voie": "Per os",
+            "voie": "IV",
             "tranches": [
               {
-                "poidsMax": 9.9,
-                "doseKg": 7.5,
-                "unite": "mg"
-              },
-              {
-                "poidsMin": 10,
-                "doseKg": 15,
-                "unite": "mg"
+                "poidsMin": null,
+                "ageMin": 6,
+                "ageMinUnite": "ans",
+                "doseKgMin": 5,
+                "doseKgMax": 10,
+                "unite": "mg",
+                "frequence": "1x/jour"
               }
             ],
+            "preparation": "Reconstitution avec solvant fourni, puis dilution NaCl 0,9% ou G5% (max 10 mg/mL) - IV lente 100-500 mg/min ou perfusion 4-8h"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Diltiazem",
+    "aSavoir": "Modalités IV lente ou perfusion prolongée"
+  },
+  {
+    "nom": "Aciclovir",
+    "nomCommercial": "ZOVIRAX",
+    "galenique": "Poudre injectable 250 mg et 500 mg",
+    "indications": [
+      {
+        "label": "Infections à HSV",
+        "posologies": [
+          {
+            "voie": "IV",
+            "tranches": [
+              {
+                "ageMax": 3,
+                "ageMaxUnite": "mois",
+                "doseKg": 60,
+                "unite": "mg",
+                "frequence": "3x/jour"
+              },
+              {
+                "ageMin": 3,
+                "ageMinUnite": "mois",
+                "doseKgMin": 30,
+                "doseKgMax": 45,
+                "unite": "mg",
+                "frequence": "3x/jour",
+                "indication": "immunodéprimés ou méningoencéphalite"
+              }
+            ],
+            "preparation": "Reconstitution: eau ppi ou NaCl 0,9% (10 mL pour 250 mg, 20 mL pour 500 mg). Dilution NaCl 0,9% exclusivement, concentration max 5 mg/mL - Perfusion minimum 1 heure"
+          }
+        ]
+      }
+    ],
+    "contreIndications": "Adaptation posologique selon clairance créatinine",
+    "incompatibilites": "A perfuser seul",
+    "surdosage": "Surveillance point de perfusion: nécrose si extravasation",
+    "aSavoir": "Teneur en sodium: 28 mg/250 mg et 56 mg/500 mg"
+  },
+  {
+    "nom": "Adalimumab",
+    "nomCommercial": "HUMIRA",
+    "galenique": "Solution injectable - Stylo/seringue pré-remplis 40 mg/0,8 mL",
+    "indications": [
+      {
+        "label": "Maladie de Crohn pédiatrique (>6 ans)",
+        "posologies": [
+          {
+            "voie": "SC",
+            "tranches": [
+              {
+                "poidsMax": 40,
+                "doses": "S0: 80 mg, S2: 40 mg, S4: 20 mg puis 20 mg/15j"
+              },
+              {
+                "poidsMin": 40,
+                "doses": "S0: 160 mg, S2: 80 mg, S4: 40 mg puis 40 mg/15j"
+              }
+            ],
+            "preparation": "Prêt à l'emploi - Injection sous-cutanée"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A injecter seul",
+    "aSavoir": "Immunosuppresseur anti-TNF-α - Conservation au froid - T2A"
+  },
+  {
+    "nom": "Alizapride",
+    "nomCommercial": "PLITICAN",
+    "galenique": "Solution injectable 50 mg/2 mL",
+    "indications": [
+      {
+        "label": "Antiémétique",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKg": 5,
             "unite": "mg",
-            "doseMax": 1000,
-            "preparation": "Toutes les 6h"
+            "frequence": "3x/jour",
+            "preparation": "IV directe"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "nom": "Amikacine",
+    "nomCommercial": "AMIKLIN",
+    "galenique": "Solution injectable 50 mg/1 mL - Lyophilisat 250 mg et 500 mg",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Aminoside",
+        "posologies": [
+          {
+            "voie": "IV",
+            "tranches": [
+              {
+                "doseKgMin": 15,
+                "doseKgMax": 30,
+                "unite": "mg",
+                "frequence": "1x/jour"
+              }
+            ],
+            "preparation": "Reconstitution: eau ppi 2 mL/250 mg, 4 mL/500 mg. Dilution G5% ou NaCl 0,9%, max 10 mg/mL - IV lente 30 min"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Allopurinol, propofol",
+    "surdosage": "Néphrotoxique, ototoxique",
+    "aSavoir": "Suivi thérapeutique: taux résiduel <5 mg/L, pic 15-20 mg/L (doses fractionnées) ou 40-50 mg/L (dose unique). Adaptation selon dosages et insuffisance rénale"
+  },
+  {
+    "nom": "Amoxicilline",
+    "nomCommercial": "CLAMOXYL",
+    "galenique": "Poudre injectable 500 mg et 1 g",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Pénicilline A",
+        "posologies": [
+          {
+            "voie": "IV",
+            "tranches": [
+              {
+                "ageMax": 7,
+                "ageMaxUnite": "jours",
+                "ageType": "prématuré",
+                "doseKg": 100,
+                "unite": "mg",
+                "frequence": "2x/jour"
+              },
+              {
+                "ageMin": 7,
+                "ageMax": 30,
+                "ageMaxUnite": "jours",
+                "ageType": "prématuré",
+                "doseKgMin": 100,
+                "doseKgMax": 150,
+                "unite": "mg",
+                "frequence": "jour"
+              },
+              {
+                "ageMin": 1,
+                "ageMinUnite": "mois",
+                "doseKgMin": 100,
+                "doseKgMax": 200,
+                "unite": "mg",
+                "frequence": "3-4x/jour"
+              }
+            ],
+            "preparation": "Reconstitution: eau ppi 10 mL/500 mg, 20 mL/1g. Dilution NaCl 0,9% - IV directe 3-4 min (max 25 mg/kg/dose) ou IV lente 30-60 min (max 50 mg/kg/dose)"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Solutions de mannitol",
+    "contreIndications": "Adaptation posologique selon clairance créatinine",
+    "surdosage": "Risque de cristallurie - Assurer hydratation suffisante",
+    "aSavoir": "Teneur en sodium: 31,5 mg/500 mg - Stabilité solution 6h"
+  },
+  {
+    "nom": "Amoxicilline + acide clavulanique",
+    "nomCommercial": "AUGMENTIN",
+    "galenique": "Poudre injectable 500+50 mg, 1000+200 mg, 2000+200 mg",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Pénicilline A + inhibiteur β-lactamases",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKg": 100,
+            "unite": "mg",
+            "frequence": "3-4x/jour",
+            "doseMax": "5 g acide clavulanique/jour",
+            "preparation": "Reconstitution: eau ppi pour concentration 20 mg/mL (max 50 mg/mL). Dilution NaCl 0,9% exclusivement - IV lente 30 min (15 min si 50 mg/mL)"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Émulsions lipidiques, midazolam, solutions glucosées",
+    "aSavoir": "Voie IM contre-indiquée - Teneur en sodium et potassium"
+  },
+  {
+    "nom": "Amphotéricine B",
+    "nomCommercial": "FUNGIZONE",
+    "galenique": "Lyophilisat 50 mg",
+    "indications": [
+      {
+        "label": "Antifongique systémique",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKg": 1,
+            "unite": "mg",
+            "frequence": "1x/jour",
+            "preparation": "Reconstitution: 10 mL eau ppi, agiter vigoureusement. Dilution G5% uniquement, max 0,1 mg/mL si voie périphérique. J1: dose test 1/10ème puis 9/10ème si bonne tolérance - IV lente 4h, distance >4h des transfusions"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Allopurinol, amsidine, aztréonam, céfépime, filgrastim, lenograstim, fluconazole, foscarnet, ondansétron, pipéracilline-tazobactam, melphalan, vinorelbine, fludarabine",
+    "contreIndications": "Pas d'AMM pédiatrique - Ne pas confondre avec amphotéricine B liposomale",
+    "surdosage": "Surveillance cardiorespiratoire - Toxicité rénale",
+    "aSavoir": "Prémédication possible (hémisuccinate d'hydrocortisone + polaramine) pour améliorer tolérance"
+  },
+  {
+    "nom": "Amphotéricine B liposomale",
+    "nomCommercial": "AMBISOME",
+    "galenique": "Lyophilisat 50 mg",
+    "indications": [
+      {
+        "label": "Antifongique systémique",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKg": 3,
+            "unite": "mg",
+            "frequence": "1x/jour",
+            "preparation": "Reconstitution: 12 mL eau ppi (4 mg/mL), agiter ≥15 sec. Dilution G5% (0,2-2 mg/mL), filtrer avec filtre fourni - IV lente 1h"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A perfuser seule",
+    "contreIndications": "Adaptation posologique si insuffisance rénale",
+    "surdosage": "Surveillance cardiorespiratoire: risque réactions anaphylactiques. Surveillance biologique: fonction rénale, hépatique, hématopoïétique",
+    "aSavoir": "T2A"
+  },
+  {
+    "nom": "Atropine sulfate",
+    "nomCommercial": "ATROPINE",
+    "galenique": "Solution injectable 0,25 mg/1 mL et 1 mg/1 mL",
+    "indications": [
+      {
+        "label": "Médication préanesthésique",
+        "posologies": [
+          {
+            "voie": "IV/SC",
+            "doseKgMin": 0.01,
+            "doseKgMax": 0.02,
+            "unite": "mg",
+            "doseMax": 0.5,
+            "preparation": "IV lente ou SC"
           }
         ]
       },
       {
-        "label": "Douleur / Fièvre (IV)",
+        "label": "Bradycardies",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKg": 0.02,
+            "unite": "mg",
+            "doseMax": 0.5,
+            "preparation": "IV lente - Répéter si besoin après 5 min (max 1 mg adulte, max 2 mg total)"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A perfuser seule",
+    "contreIndications": "Ne pas administrer <0,1 mg: risque bradycardie paradoxale",
+    "aSavoir": "Anticholinergique - Administration sous contrôle médical strict - Voie intratrachéale et IO possibles pour bradycardies"
+  },
+  {
+    "nom": "Aztréonam",
+    "nomCommercial": "AZACTAM",
+    "galenique": "Poudre injectable 1 g",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Monobactam",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKg": 100,
+            "unite": "mg",
+            "frequence": "3-4x/jour",
+            "preparation": "Reconstitution: eau ppi 10 mL/1g. Dilution NaCl 0,9% ou G5% - IV lente 30 min"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A perfuser seul"
+  },
+  {
+    "nom": "Basiliximab",
+    "nomCommercial": "SIMULECT",
+    "galenique": "Poudre 10 mg + solvant 2,5 mL",
+    "indications": [
+      {
+        "label": "Immunosuppresseur transplantation - Anti-IL2",
+        "posologies": [
+          {
+            "voie": "IV",
+            "tranches": [
+              {
+                "poidsMax": 35,
+                "doses": "20 mg en 2 doses de 10 mg"
+              },
+              {
+                "poidsMin": 35,
+                "doses": "40 mg en 2 doses de 20 mg"
+              }
+            ],
+            "preparation": "1ère dose: 2h avant transplantation, 2ème dose: 4j après. Reconstitution: solvant fourni, tourner doucement (4 mg/mL). Dilution NaCl 0,9% ou G5% ≥25 mL - IV directe ou IV lente 20-30 min"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A perfuser seul",
+    "surdosage": "Surveillance cardiorespiratoire - Équipement d'urgence disponible",
+    "aSavoir": "Administration sous contrôle médical qualifié en transplantation - Utilisation extemporanée"
+  },
+  {
+    "nom": "Benzylpénicilline sodique",
+    "nomCommercial": "PENICILLINE G",
+    "galenique": "Poudre injectable 1 MUI",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Pénicilline G",
+        "posologies": [
+          {
+            "voie": "IV",
+            "tranches": [
+              {
+                "ageType": "nouveau-né",
+                "doseMin": 75000,
+                "doseMax": 200000,
+                "unite": "UI",
+                "frequence": "3-4x/jour"
+              },
+              {
+                "ageType": "nourrisson/enfant",
+                "doseMin": 50000,
+                "doseMax": 100000,
+                "unite": "UI",
+                "frequence": "3-4x/jour"
+              }
+            ],
+            "preparation": "Reconstitution: eau ppi 5 mL, agiter vigoureusement. Dilution NaCl 0,9% ou G5% 50-100 mL - IV lente 20-30 min"
+          }
+        ]
+      }
+    ],
+    "aSavoir": "Teneur en sodium: 48,3 mg/MUI"
+  },
+  {
+    "nom": "Calcitonine",
+    "nomCommercial": "CALSYN",
+    "galenique": "Solution injectable 100 UI/1 mL",
+    "indications": [
+      {
+        "label": "Ostéogenèse imparfaite",
+        "posologies": [
+          {
+            "voie": "IM/SC",
+            "tranches": [
+              {
+                "ageMin": 6,
+                "ageMinUnite": "mois",
+                "doseKg": 2,
+                "unite": "UI",
+                "frequence": "3x/semaine"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Hypercalcémie adulte",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKgMin": 4,
+            "doseKgMax": 8,
+            "unite": "UI",
+            "frequence": "12h",
+            "duree": "1-2 jours",
+            "preparation": "Dilution NaCl 0,9% ou G5% 500 mL - IV lente 6h après hydratation suffisante"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A perfuser seule"
+  },
+  {
+    "nom": "Caspofungine",
+    "nomCommercial": "CANCIDAS",
+    "galenique": "Poudre injectable 50 mg et 70 mg",
+    "indications": [
+      {
+        "label": "Antifongique - Echinocandine",
+        "posologies": [
+          {
+            "voie": "IV",
+            "tranches": [
+              {
+                "ageMax": 3,
+                "ageMaxUnite": "mois",
+                "doseSurface": 25,
+                "unite": "mg/m²"
+              },
+              {
+                "ageMin": 3,
+                "ageMax": 11,
+                "ageMaxUnite": "mois",
+                "doseSurface": 50,
+                "unite": "mg/m²"
+              },
+              {
+                "ageMin": 12,
+                "ageMinUnite": "mois",
+                "ageMax": 17,
+                "ageMaxUnite": "ans",
+                "doseCharge": "70 mg/m²",
+                "doseEntretien": "50 mg/m²",
+                "doseMax": 70
+              }
+            ],
+            "preparation": "Laisser à température ambiante. Reconstitution: 10,5 mL eau ppi. Dilution NaCl 0,9% (max 0,5 mg/mL), filtrer - IV lente 1h"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A perfuser seul - Incompatible solutions glucosées",
+    "aSavoir": "Teneur en saccharose: 35,7 mg/flacon 50 mg - T2A"
+  },
+  {
+    "nom": "Cefamandole",
+    "nomCommercial": "KEFANDOL",
+    "galenique": "Poudre injectable 750 mg",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Céphalosporine 2ème génération",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKg": 50,
+            "unite": "mg",
+            "frequence": "3-4x/jour",
+            "preparation": "Reconstitution: eau ppi 10 mL, agiter jusqu'à dissolution. Dilution NaCl 0,9% ou G5% 100 mL - IV directe 3-5 min ou IV lente 15-30 min"
+          },
+          {
+            "indication": "Infections ostéo-articulaires",
+            "doseKg": 150,
+            "unite": "mg",
+            "frequence": "3-4x/jour",
+            "doseMax": "6 g/jour"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A perfuser seul",
+    "surdosage": "Surveillance fonction rénale si association aminosides ou furosémide",
+    "aSavoir": "Teneur en sodium: 77 mg/g (3,3 meq/g)"
+  },
+  {
+    "nom": "Cefazoline",
+    "nomCommercial": "CEFACIDAL",
+    "galenique": "Poudre injectable 1 g",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Céphalosporine 1ère génération",
+        "posologies": [
+          {
+            "voie": "IV",
+            "tranches": [
+              {
+                "ageType": "nourrisson/enfant",
+                "doseKgMin": 25,
+                "doseKgMax": 50,
+                "unite": "mg",
+                "frequence": "2-3x/jour"
+              },
+              {
+                "ageType": "adulte",
+                "doseMin": 1500,
+                "doseMax": 3000,
+                "unite": "mg",
+                "frequence": "2-3x/jour"
+              }
+            ],
+            "preparation": "Reconstitution: eau ppi 5 mL. Dilution NaCl 0,9% ou G5% 50-100 mL - IV directe 3-5 min ou IV lente 30 min"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Amiodarone, cefpirome",
+    "contreIndications": "Contre-indiqué prématuré et nouveau-né <1 mois. Adaptation posologique selon clairance créatinine",
+    "surdosage": "Surveillance fonction rénale si association aminosides ou furosémide",
+    "aSavoir": "Teneur en sodium: 48,3 mg/g"
+  },
+  {
+    "nom": "Cefotaxime",
+    "nomCommercial": "CLAFORAN",
+    "galenique": "Poudre injectable 500 mg et 1 g",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Céphalosporine 3ème génération",
+        "posologies": [
+          {
+            "voie": "IV",
+            "tranches": [
+              {
+                "ageType": "prématuré",
+                "doseKg": 50,
+                "unite": "mg",
+                "frequence": "2x/jour",
+                "augmentation": "jusqu'à 100 mg/kg/j si infection sévère"
+              },
+              {
+                "ageType": "nouveau-né/nourrisson/enfant",
+                "doseKg": 50,
+                "unite": "mg",
+                "frequence": "3x/jour",
+                "augmentation": "jusqu'à 200 mg/kg/j si infection sévère"
+              }
+            ],
+            "preparation": "Reconstitution: eau ppi 2 mL/500 mg, 4 mL/1g. Dilution NaCl 0,9% ou G5%, max 80 mg/mL - IV directe ou IV lente 20-60 min"
+          },
+          {
+            "indication": "Dose à visée méningée (≥3 mois)",
+            "doseKgMin": 200,
+            "doseKgMax": 300,
+            "unite": "mg",
+            "doseMax": "12 g/jour"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Fluconazole, vancomycine",
+    "surdosage": "Surveillance fonction rénale si association aminosides ou furosémide"
+  },
+  {
+    "nom": "Ceftazidime",
+    "nomCommercial": "FORTUM",
+    "galenique": "Poudre injectable 250, 500 mg, 1 g et 2 g",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Céphalosporine 3ème génération",
+        "posologies": [
+          {
+            "voie": "IV",
+            "tranches": [
+              {
+                "ageType": "nouveau-né",
+                "doseKgMin": 25,
+                "doseKgMax": 50,
+                "unite": "mg",
+                "frequence": "3x/jour"
+              },
+              {
+                "ageType": "nourrisson/enfant",
+                "doseKg": 50,
+                "unite": "mg",
+                "frequence": "3x/jour",
+                "augmentation": "100-200 mg/kg/j si infection sévère"
+              }
+            ],
+            "preparation": "Reconstitution: eau ppi 1 mL/250 mg, 2 mL/500 mg, 3 mL/1g, 10 mL/2g. Flacons sous vide: attendre 1-2 min après dégagement gazeux. Dilution NaCl 0,9%, G5%, G10%, Ringer-lactate 25 mL/1g - IV directe 2-5 min ou IV lente 30 min"
+          },
+          {
+            "indication": "Perfusion continue (neutropéniques/mucoviscidose)",
+            "doseKgMin": 100,
+            "doseKgMax": 200,
+            "unite": "mg",
+            "preparation": "Après dose de charge - Protocole pneumologie"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A passer de préférence seul. Instable avec aciclovir, ganciclovir. Risque composés insolubles avec cytotoxiques. Ne pas mélanger à solution bicarbonatée",
+    "aSavoir": "Teneur en sodium: 51 mg/g"
+  },
+  {
+    "nom": "Ceftriaxone",
+    "nomCommercial": "ROCEPHINE",
+    "galenique": "Poudre injectable 500 mg et 1 g (IV-IM)",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Céphalosporine 3ème génération",
+        "posologies": [
+          {
+            "voie": "IV/IM",
+            "doseKg": 50,
+            "unite": "mg",
+            "frequence": "1x/jour",
+            "preparation": "Si IV: eau ppi 5 mL/500 mg, 10 mL/1g. Si IM: lidocaïne 1% 2 mL/500 mg, 3,5 mL/1g. Dilution NaCl 0,9% ou G5% - IV directe 2-4 min ou IV lente 30 min"
+          },
+          {
+            "indication": "Dose à visée méningée",
+            "doseKgMin": 70,
+            "doseKgMax": 100,
+            "unite": "mg",
+            "frequence": "1-2x/jour"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Vancomycine, fluconazole, aminosides (amikacine, gentamicine, tobramycine), PERFUSIONS CONTENANT DU CALCIUM",
+    "contreIndications": "Adaptation posologique selon clairance créatinine",
+    "surdosage": "Contrôles réguliers formule sanguine si traitement prolongé",
+    "aSavoir": "Teneur en sodium: 41,5 mg/500 mg - Utilisation extemporanée"
+  },
+  {
+    "nom": "Ciclosporine",
+    "nomCommercial": "SANDIMMUM",
+    "galenique": "Solution injectable 50 mg/1 mL et 250 mg/5 mL",
+    "indications": [
+      {
+        "label": "Immunosuppresseur",
+        "posologies": [
+          {
+            "voie": "IV/IVSE",
+            "doseInitiale": "2-5 mg/kg/jour",
+            "preparation": "Adaptation individuelle selon dosage sanguin total et rapport efficacité-tolérance. Dilution G5% ou NaCl 0,9% (1/20ème à 1/100ème) - IV lente 2-6h ou perfusion continue"
+          }
+        ]
+      }
+    ],
+    "contreIndications": "Tenir compte des différences de biodisponibilité entre formulations si relais per os",
+    "surdosage": "Perfusion sous surveillance stricte: risque réaction anaphylactique. Nombreuses interactions médicamenteuses",
+    "aSavoir": "Suivi thérapeutique indispensable: taux efficace 100-300 ng/mL sang. Variations interindividuelles importantes, marge thérapeutique étroite"
+  },
+  {
+    "nom": "Ciprofloxacine",
+    "nomCommercial": "CIFLOX",
+    "galenique": "Poche perfusion 200 mg/100 mL",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Fluoroquinolone",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKgMin": 20,
+            "doseKgMax": 30,
+            "unite": "mg",
+            "frequence": "2-3x/jour",
+            "doseMaxParInjection": 400,
+            "doseMaxJour": 1200,
+            "preparation": "Prêt à l'emploi - IV lente 1h"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Céfépime, dexaméthasone, furosémide, héparine sodique, hydrocortisone, bicarbonates, méthylprednisolone, phosphate de sodium, teicoplanine",
+    "contreIndications": "Pas d'AMM pédiatrique. Adaptation posologique selon clairance créatinine (administration 18-24h)",
+    "aSavoir": "Fluoroquinolone: utilisation prudente chez l'enfant"
+  },
+  {
+    "nom": "Clindamycine",
+    "nomCommercial": "DALACINE",
+    "galenique": "Solution injectable 600 mg/4 mL",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Lincosamide",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKgMin": 30,
+            "doseKgMax": 40,
+            "unite": "mg",
+            "frequence": "3-4x/jour",
+            "doseMax": "4 g/jour",
+            "preparation": "Dilution obligatoire NaCl 0,9% ou G5%, max 18 mg/mL - IV lente 10-60 min (débit max 30 mg/min)"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Allopurinol, filgrastim, fluconazole",
+    "contreIndications": "Ne jamais administrer en IVD",
+    "surdosage": "Surveillance NFS, fonctions hépatique et rénale si traitement prolongé",
+    "aSavoir": "Teneur en sodium: 2 mg/ampoule 600 mg"
+  },
+  {
+    "nom": "Clonazépam injectable",
+    "nomCommercial": "RIVOTRIL",
+    "galenique": "Solution à diluer 1 mg/1 mL + solvant 1 mL",
+    "indications": [
+      {
+        "label": "Benzodiazépine anticonvulsivante",
+        "posologies": [
+          {
+            "voie": "IV/IVSE",
+            "doseKgMin": 0.025,
+            "doseKgMax": 0.1,
+            "unite": "mg",
+            "preparation": "Dilution eau ppi 1 mL obligatoire. Dilution NaCl 0,9% ou G5% (1 amp/≥85 mL en perfusion) - IV directe min 30 sec, IV lente, perfusion continue (renouveler seringue/12h)"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Adsorption sur PVC: administration immédiate",
+    "contreIndications": "AMM à partir de 1 an",
+    "surdosage": "Surveillance continue FR et PA",
+    "aSavoir": "Teneur en alcool: 159 mg/ampoule 1 mg. Risque de thrombophlébite"
+  },
+  {
+    "nom": "Cloxacilline injectable",
+    "nomCommercial": "ORBENINE",
+    "galenique": "Poudre injectable 1 g",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Pénicilline M",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKgMin": 50,
+            "doseKgMax": 100,
+            "unite": "mg",
+            "frequence": "3-4x/jour",
+            "augmentation": "jusqu'à 200 mg/kg/j (max 12 g/j)",
+            "preparation": "Reconstitution: eau ppi 5 mL/1g. Dilution NaCl 0,9% ou G5% 100 mL/1g - IV lente 60 min"
+          }
+        ]
+      }
+    ],
+    "aSavoir": "Teneur en sodium: 52,8 mg/flacon 1 g"
+  },
+  {
+    "nom": "Diazépam injectable",
+    "nomCommercial": "VALIUM",
+    "galenique": "Solution injectable/rectale 10 mg/2 mL",
+    "indications": [
+      {
+        "label": "Traitement d'urgence état de mal épileptique",
+        "posologies": [
+          {
+            "voie": "IV",
+            "tranches": [
+              {
+                "ageType": "nouveau-né",
+                "doseMax": 2,
+                "unite": "mg"
+              },
+              {
+                "ageMax": 5,
+                "ageMaxUnite": "ans",
+                "doseKgMin": 0.05,
+                "doseKgMax": 0.3,
+                "unite": "mg",
+                "doseMax": 5,
+                "preparation": "Répéter 15-30 min si besoin"
+              },
+              {
+                "ageMin": 5,
+                "ageMinUnite": "ans",
+                "doseKgMin": 0.05,
+                "doseKgMax": 0.3,
+                "unite": "mg",
+                "doseMax": 10,
+                "preparation": "Répéter 15-30 min si besoin"
+              }
+            ],
+            "preparation": "Dilution G5% max 0,25 mg/mL - IV lente 3-5 min ou perfusion continue (max 1-2 mg/min)"
+          }
+        ]
+      },
+      {
+        "label": "Sédation, myorelaxation, anxiolyse",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKgMin": 0.04,
+            "doseKgMax": 0.3,
+            "unite": "mg",
+            "frequence": "2-4h",
+            "doseMax": "0,6 mg/kg/8h"
+          }
+        ]
+      },
+      {
+        "label": "Traitement d'urgence crise convulsive intra-rectale",
+        "posologies": [
+          {
+            "voie": "Intra-rectale",
+            "doseKgMin": 0.5,
+            "doseKgMax": 0.25,
+            "unite": "mg",
+            "preparation": "Prélever avec seringue et injecter avec canule intra-rectale"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A passer seul",
+    "contreIndications": "Nouveau-né: utilisation non recommandée en 1ère intention (contient alcool benzylique et acide benzoïque)",
+    "surdosage": "Risque d'apnée: matériel de réanimation respiratoire disponible"
+  },
+  {
+    "nom": "Epoprosténol",
+    "nomCommercial": "FLOLAN",
+    "galenique": "Poudre 0,5 mg + solvant 50 mL",
+    "indications": [
+      {
+        "label": "Vasodilatateur - Prostacycline",
+        "posologies": [
+          {
+            "voie": "IVSE",
+            "doseInitiale": "1 ng/kg/min",
+            "augmentation": "Par paliers de 1 ng/kg/min toutes les 12-24h selon tolérance",
+            "doseMax": "20 ng/kg/min",
+            "preparation": "Reconstitution avec solvant exclusivement. Ne pas diluer - Perfusion IV continue"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A perfuser seul",
+    "surdosage": "Administration en réanimation/soins intensifs. Monitorage cardiorespiratoire. Arrêt progressif par paliers de 2 ng/kg/min",
+    "aSavoir": "Après reconstitution: conservation 24h au réfrigérateur puis administration sur max 8h à température ambiante - T2A"
+  },
+  {
+    "nom": "Esmolol",
+    "nomCommercial": "BREVIBLOC",
+    "galenique": "Solution injectable 100 mg/10 mL",
+    "indications": [
+      {
+        "label": "Antihypertenseur, antiarythmique - β-bloquant cardiosélectif",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseCharge": "50-150 µg/kg/min pendant 1 min",
+            "doseEntretien": "Augmentation par paliers de 50-100 µg/kg/min toutes les 10 min",
+            "doseMax": "1000 µg/kg/min",
+            "preparation": "Prêt à l'emploi - IV directe 1 min (dose de charge), 5 min (dose d'entretien)"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A perfuser seul",
+    "surdosage": "Monitorage cardiaque",
+    "aSavoir": "Peu de données pédiatriques - Adapter selon réponse individuelle et tolérance"
+  },
+  {
+    "nom": "Fer injectable",
+    "nomCommercial": "VENOFER / FER MYLAN",
+    "galenique": "Solution injectable 100 mg/5 mL",
+    "indications": [
+      {
+        "label": "Anémie ferriprive",
+        "posologies": [
+          {
+            "voie": "IV",
+            "indication": "Hémodialyse",
+            "doseKg": "2-4 mg/semaine"
+          },
+          {
+            "indication": "Don de sang autologue",
+            "doseKg": "2-3 mg/semaine"
+          },
+          {
+            "indication": "Anémies aiguës",
+            "doseKg": 3,
+            "unite": "mg",
+            "frequence": "1-3x/semaine",
+            "intervalle": "minimum 48h"
+          },
+          {
+            "indication": "Anémies des MICI",
+            "doseKgMin": 3,
+            "doseKgMax": 7,
+            "unite": "mg",
+            "frequence": "1-3x/semaine"
+          }
+        ],
+        "preparation": "Dilution NaCl 0,9% exclusivement 100 mL/ampoule - IV lente 1-2h (débit 3,5 mL/min)"
+      }
+    ],
+    "incompatibilites": "A perfuser seul",
+    "contreIndications": "Ne pas dépasser 300 mg/injection",
+    "surdosage": "Lors de la 1ère perfusion: dose test 15 min (25-50 mg enfant, 50 mg adulte), puis si aucun effet indésirable, perfuser le reste. Éviter extravasation: toxicité locale"
+  },
+  {
+    "nom": "Fer injectable",
+    "nomCommercial": "FERINJECT",
+    "galenique": "Solution injectable 50 mg/mL, flacon 10 mL (500 mg)",
+    "indications": [
+      {
+        "label": "Carence martiale adulte et enfants ≥14 ans",
+        "posologies": [
+          {
+            "voie": "IV perfusion",
+            "doseKg": 15,
+            "unite": "mg",
+            "frequence": "1x/semaine",
+            "preparation": "Dilution NaCl 0,9% exclusivement: 100-200 mg dans 50 mL, 200-500 mg dans 100 mL, 500-1000 mg dans 250 mL - Perfusion 100 mL: min 6 min / 250 mL: min 15 min"
+          },
+          {
+            "voie": "IV bolus",
+            "dose": 200,
+            "unite": "mg",
+            "frequence": "max 3x/semaine",
+            "preparation": "Pas de dilution"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A perfuser seul",
+    "surdosage": "Éviter extravasation: toxicité locale",
+    "aSavoir": "Ne pas injecter >1 g/semaine"
+  },
+  {
+    "nom": "Fluconazole",
+    "nomCommercial": "TRIFLUCAN",
+    "galenique": "Poche perfusion 100 mg/50 mL et 200 mg/100 mL",
+    "indications": [
+      {
+        "label": "Antifongique - Azolé",
+        "posologies": [
+          {
+            "voie": "IV",
+            "indication": "Patient non immunodéprimé",
+            "doseKg": 3,
+            "unite": "mg",
+            "frequence": "1x/jour"
+          },
+          {
+            "indication": "Infections systémiques",
+            "doseKgMin": 6,
+            "doseKgMax": 12,
+            "unite": "mg",
+            "frequence": "1x/jour",
+            "doseMax": 400,
+            "preparation": "Prêt à l'emploi - IV lente 1h (max 10 mL/min)"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Amphotéricine B, toutes les β-lactamines, clindamycine, diazépam, digoxine, furosémide, imipénème, gluconate de calcium, halopéridol, pentamidine, sulfaméthoxazole-triméthoprime",
+    "contreIndications": "Adaptation posologique selon clairance créatinine (augmentation intervalle et/ou diminution dose)"
+  },
+  {
+    "nom": "Foscarnet sodique",
+    "nomCommercial": "FOSCAVIR",
+    "galenique": "Solution injectable 6 g/250 mL",
+    "indications": [
+      {
+        "label": "Antiviral",
+        "posologies": [
+          {
+            "voie": "IV",
+            "indication": "Rétinite à CMV - Traitement d'attaque",
+            "doseKg": 180,
+            "unite": "mg",
+            "frequence": "3x/jour",
+            "duree": "14-21 jours"
+          },
+          {
+            "indication": "Rétinite à CMV - Traitement d'entretien",
+            "doseKgMin": 90,
+            "doseKgMax": 120,
+            "unite": "mg",
+            "frequence": "1x/jour"
+          },
+          {
+            "indication": "Infections à HSV",
+            "doseKgMin": 80,
+            "doseKgMax": 120,
+            "unite": "mg",
+            "frequence": "2-3x/jour",
+            "duree": "21 jours"
+          }
+        ],
+        "preparation": "Prêt à l'emploi ou dilution NaCl 0,9%/G5%. Si administration périphérique: diluer dans même volume - IV lente 1-2h + hydratation NaCl 0,9% ou G5%"
+      }
+    ],
+    "incompatibilites": "A perfuser seul. Incompatible G30%, amphotéricine B, aciclovir, ganciclovir, pentamidine, triméthoprime-sulfaméthoxazole, vancomycine, solution de calcium",
+    "contreIndications": "Adaptation posologique selon clairance créatinine. Ne jamais conserver au réfrigérateur. Ne pas administrer sans hydratation",
+    "surdosage": "Éviter contact peau/yeux: risque d'irritation. Utilisation extemporanée"
+  },
+  {
+    "nom": "Fosfomycine",
+    "nomCommercial": "FOSFOCINE",
+    "galenique": "Poudre injectable 1 g et 4 g",
+    "indications": [
+      {
+        "label": "Antibiotique",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKgMin": 100,
+            "doseKgMax": 200,
+            "unite": "mg",
+            "frequence": "2-3x/jour",
+            "preparation": "Reconstitution avec solvant fourni: 10 mL/1g, 20 mL/4g. Dilution G5% ou NaCl 0,9% qsp 50 mL - IV lente max 1 g/h, max 4 g/injection, dose quotidienne à administrer"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A passer seul",
+    "contreIndications": "Adaptation posologique selon clairance créatinine",
+    "surdosage": "Doit systématiquement être associé à un autre antibiotique actif et synergique",
+    "aSavoir": "Teneur en sodium: 330 mg/g"
+  },
+  {
+    "nom": "Fraction phospholipidique de poumon de porc",
+    "nomCommercial": "CUROSURF",
+    "galenique": "Suspension endotrachéobronchique 120 mg/1,5 mL et 240 mg/3 mL",
+    "indications": [
+      {
+        "label": "Surfactant pulmonaire",
+        "posologies": [
+          {
+            "voie": "Instillation endotrachéale",
+            "doseKg": 200,
+            "unite": "mg",
+            "preparation": "Le plus tôt possible après naissance. Doses supplémentaires possibles: 100 mg/kg à 6-12h de la 1ère dose puis à nouveau 12h après si persistance SDR (max total: 400 mg/kg)"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A passer seul",
+    "surdosage": "Administration par praticiens expérimentés en réanimation néonatale. Contrôle rigoureux et permanent constantes de ventilation et d'oxygénation",
+    "aSavoir": "Avant utilisation: réchauffer flacon jusqu'à 37°C et agiter doucement haut en bas pour solution uniforme. Prélever avec aiguille fine puis instiller en dose unique directement dans trachée basse"
+  },
+  {
+    "nom": "Furosémide",
+    "nomCommercial": "LASILIX",
+    "galenique": "Solution injectable 20 mg/2 mL",
+    "indications": [
+      {
+        "label": "Diurétique de l'anse",
+        "posologies": [
+          {
+            "voie": "IV/IVSE",
+            "tranches": [
+              {
+                "ageType": "prématuré/nouveau-né",
+                "doseKgMin": 1,
+                "doseKgMax": 4,
+                "unite": "mg",
+                "frequence": "1-2x/jour"
+              },
+              {
+                "ageType": "nourrisson/enfant",
+                "doseKgMin": 2,
+                "doseKgMax": 8,
+                "unite": "mg",
+                "frequence": "2-4x/jour"
+              }
+            ],
+            "preparation": "Dilution NaCl 0,9% si besoin - IV lente 1-15 min ou perfusion continue 0,05 mg/kg/h"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Ciprofloxacine, diltiazem, dropéridol, esmolol, filgrastim, gentamicine, idarubicine, métoclopramide, midazolam, milrinone, morphine, nétilmicine, nicardipine, ondansétron, quinidine, thiopental, vinblastine, vincristine, vinorelbine",
+    "contreIndications": "Adaptation posologique selon clairance créatinine. Utiliser avec prudence en cas d'insuffisance hépatocellulaire",
+    "surdosage": "Surveillance de l'équilibre hydroélectrolytique",
+    "aSavoir": "Teneur en sodium: 2,95 mg/mL"
+  },
+  {
+    "nom": "Ganciclovir",
+    "nomCommercial": "CYMEVAN",
+    "galenique": "Poudre injectable 500 mg",
+    "indications": [
+      {
+        "label": "Infections à CMV - Antiviral",
+        "posologies": [
+          {
+            "voie": "IV",
+            "indication": "Traitement d'attaque",
+            "doseKg": 10,
+            "unite": "mg",
+            "frequence": "2x/jour",
+            "duree": "14-21 jours",
+            "preparation": "Reconstitution: 10 mL eau ppi. Dilution NaCl 0,9% ou G5% (max 10 mg/mL) - IV lente 1h minimum"
+          },
+          {
+            "indication": "Traitement d'entretien",
+            "doseKg": 5,
+            "unite": "mg",
+            "frequence": "1x/jour ou 6 mg/kg 5j/7",
+            "preparation": "IV lente 1h minimum"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A perfuser seul. Foscarnet",
+    "contreIndications": "Adaptation posologique selon clairance créatinine. Contre-indiqué si neutropénie <500/mm³ ou thrombopénie <25000/mm³",
+    "surdosage": "Myélosuppression: surveillance NFS hebdomadaire. Tératogène, mutagène",
+    "aSavoir": "Ne pas administrer en SC, IM ou bolus IV. Hydratation suffisante. Teneur en sodium: 46 mg/flacon"
+  },
+  {
+    "nom": "Gentamicine",
+    "nomCommercial": "GENTALLINE",
+    "galenique": "Solution injectable 10 mg/mL, 40 mg/mL, 80 mg/2 mL",
+    "indications": [
+      {
+        "label": "Infections bactériennes - Aminoside",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKgMin": 3,
+            "doseKgMax": 5,
+            "unite": "mg",
+            "frequence": "1x/jour",
+            "preparation": "Adaptation selon dosages sanguins et fonction rénale. Dilution G5% ou NaCl 0,9% (max 10 mg/mL) - IV lente 30 min"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Allopurinol, amphotéricine B, indométacine, propofol",
+    "contreIndications": "Adaptation posologique selon clairance créatinine et prématurité",
+    "surdosage": "Suivi thérapeutique: taux résiduel <1 mg/L, pic 8-10 mg/L (doses fractionnées) ou 15-20 mg/L (dose unique quotidienne). Néphrotoxique, ototoxique",
+    "aSavoir": "Teneur en sodium: 3,2 mg/80 mg. Utilisation extemporanée de la solution diluée"
+  },
+  {
+    "nom": "Héparine sodique",
+    "nomCommercial": "HEPARINE",
+    "galenique": "Solution injectable 5000 UI/mL",
+    "indications": [
+      {
+        "label": "Anticoagulant",
+        "posologies": [
+          {
+            "voie": "IV/SC",
+            "indication": "Traitement curatif IV",
+            "doseCharge": "75 UI/kg bolus",
+            "doseEntretien": "20-28 UI/kg/h en continu",
+            "preparation": "Adaptation selon TCA (cible: 1,5-2,5 x témoin). Dilution NaCl 0,9% ou G5%"
+          },
+          {
+            "indication": "Traitement curatif SC",
+            "doseKg": 250,
+            "unite": "UI",
+            "frequence": "2x/jour",
+            "preparation": "SC pure"
+          },
+          {
+            "indication": "Prophylaxie TVPP",
+            "doseKg": 100,
+            "unite": "UI",
+            "frequence": "2-3x/jour",
+            "preparation": "SC"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Nombreuses incompatibilités: amiodarone, ciprofloxacine, doxorubicine, gentamicine, halopéridol, idarubicine, tobramycine, vancomycine",
+    "contreIndications": "Thrombopénie induite par héparine. Contre-indications relatives: hémorragie active, thrombopénie",
+    "surdosage": "Surveillance clinique et TCA. Antidote: protamine (1 mg neutralise 100 UI héparine)",
+    "aSavoir": "Surveillance plaquettes J3-J5 puis 2x/semaine. Risque TIH"
+  },
+  {
+    "nom": "Hydrocortisone",
+    "nomCommercial": "HYDROCORTISONE",
+    "galenique": "Poudre injectable 100 mg",
+    "indications": [
+      {
+        "label": "Corticoïde - Insuffisance surrénalienne, choc",
+        "posologies": [
+          {
+            "voie": "IV/IM",
+            "indication": "Insuffisance surrénale aiguë",
+            "doseKg": "1-2 mg/kg/6h ou 25 mg/m²/6h"
+          },
+          {
+            "indication": "Choc septique réfractaire",
+            "dose": "50 mg/m²/jour en continu ou doses fractionnées"
+          }
+        ],
+        "preparation": "Reconstitution: eau ppi. Dilution G5% ou NaCl 0,9% - IV directe ou IV lente"
+      }
+    ],
+    "contreIndications": "Utiliser avec prudence: infection non contrôlée, HTA, diabète",
+    "surdosage": "Effets secondaires: hyperglycémie, rétention hydrosodée, immunosuppression",
+    "aSavoir": "Équivalence: 20 mg hydrocortisone = 5 mg prednisolone = 4 mg méthylprednisolone"
+  },
+  {
+    "nom": "Immunoglobulines polyvalentes",
+    "nomCommercial": "PRIVIGEN / TEGELINE",
+    "galenique": "Solution perfusion 10% (100 mg/mL)",
+    "indications": [
+      {
+        "label": "Immunothérapie substitutive et immunomodulation",
+        "posologies": [
+          {
+            "voie": "IV",
+            "indication": "Déficit immunitaire",
+            "doseKg": "200-600 mg/kg/mois"
+          },
+          {
+            "indication": "Kawasaki",
+            "doseKg": "2000 mg (2 g)",
+            "frequence": "dose unique + aspirine"
+          },
+          {
+            "indication": "PTI",
+            "doseKg": "800-1000 mg",
+            "frequence": "1-2 jours"
+          },
+          {
+            "indication": "Guillain-Barré",
+            "doseKg": 400,
+            "unite": "mg",
+            "duree": "5 jours"
+          }
+        ],
+        "preparation": "Prêt à l'emploi - Débuter lentement puis augmenter selon tolérance (généralement 0,5 mL/kg/h puis jusqu'à 4-8 mL/kg/h)"
+      }
+    ],
+    "incompatibilites": "A perfuser seul. Ne pas mélanger avec d'autres produits",
+    "contreIndications": "Déficit en IgA avec anticorps anti-IgA (risque anaphylaxie). Insuffisance rénale sévère",
+    "surdosage": "Réactions possibles: céphalées, frissons, fièvre, méningite aseptique, insuffisance rénale aiguë, accidents thromboemboliques",
+    "aSavoir": "Surveillance clinique pendant et après perfusion. Prémédication possible (paracétamol). Administration en milieu hospitalier. T2A"
+  },
+  {
+    "nom": "Insuline rapide",
+    "nomCommercial": "ACTRAPID / UMULINE RAPIDE",
+    "galenique": "Solution injectable 100 UI/mL",
+    "indications": [
+      {
+        "label": "Hyperglycémie, acidocétose diabétique",
+        "posologies": [
+          {
+            "voie": "IV/SC",
+            "indication": "Acidocétose diabétique",
+            "doseCharge": "0,1 UI/kg bolus IV (optionnel)",
+            "doseEntretien": "0,05-0,1 UI/kg/h en IVSE",
+            "preparation": "Dilution NaCl 0,9% (1 UI/mL). Surveillance glycémie horaire"
+          },
+          {
+            "indication": "Hyperglycémie simple",
+            "doseKg": "0,05-0,1 UI",
+            "preparation": "SC - Adaptation selon glycémies"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Adsorption au PVC: rincer tubulure avant utilisation",
+    "contreIndications": "Surveillance étroite: risque hypoglycémie et hypokaliémie",
+    "surdosage": "Hypoglycémie: resucrage IV (G10-G30) si <0,6 g/L ou troubles conscience",
+    "aSavoir": "Apport concomitant de K+ souvent nécessaire en acidocétose. Surveillance glycémie, kaliémie"
+  },
+  {
+    "nom": "Kétoprofène injectable",
+    "nomCommercial": "PROFENID",
+    "galenique": "Solution injectable 100 mg/2 mL",
+    "indications": [
+      {
+        "label": "AINS - Antalgique, antipyrétique",
+        "posologies": [
+          {
+            "voie": "IV",
+            "tranches": [
+              {
+                "ageMin": 15,
+                "ageMinUnite": "ans",
+                "doseKgMin": 0.5,
+                "doseKgMax": 1,
+                "unite": "mg",
+                "frequence": "3x/jour",
+                "doseMax": 300
+              }
+            ],
+            "preparation": "Dilution NaCl 0,9% ou G5% minimum 100 mL - IV lente minimum 30 min"
+          }
+        ]
+      }
+    ],
+    "contreIndications": "Grossesse (>24 SA), insuffisance rénale sévère, hémorragie active, ulcère gastroduodénal évolutif, insuffisance cardiaque sévère",
+    "surdosage": "Effets indésirables: toxicité rénale, digestive, risque hémorragique",
+    "aSavoir": "Pas d'AMM <15 ans. Utilisation limitée en pédiatrie. Surveillance fonction rénale"
+  },
+  {
+    "nom": "Labétalol",
+    "nomCommercial": "TRANDATE",
+    "galenique": "Solution injectable 100 mg/20 mL (5 mg/mL)",
+    "indications": [
+      {
+        "label": "Antihypertenseur - α et β-bloquant",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseCharge": "0,2-1 mg/kg bolus lent",
+            "doseEntretien": "0,5-3 mg/kg/h en IVSE",
+            "preparation": "Bolus IV sur 2 min. IVSE: dilution G5% ou NaCl 0,9% (1 mg/mL)"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Furosémide, héparine sodique, bicarbonate de sodium",
+    "contreIndications": "Bloc AV, bradycardie sévère, asthme sévère, insuffisance cardiaque décompensée",
+    "surdosage": "Surveillance continue PA, FC. Risque: hypotension, bradycardie, bronchospasme",
+    "aSavoir": "Adaptation posologique progressive selon réponse. Monitorage cardiorespiratoire"
+  },
+  {
+    "nom": "Linézolide",
+    "nomCommercial": "ZYVOXID",
+    "galenique": "Solution perfusion 2 mg/mL, poche 600 mg/300 mL",
+    "indications": [
+      {
+        "label": "Antibiotique - Oxazolidinone (SARM, ERV)",
+        "posologies": [
+          {
+            "voie": "IV",
+            "tranches": [
+              {
+                "ageMax": 12,
+                "ageMaxUnite": "ans",
+                "doseKg": 10,
+                "unite": "mg",
+                "frequence": "3x/jour"
+              },
+              {
+                "ageMin": 12,
+                "ageMinUnite": "ans",
+                "dose": 600,
+                "unite": "mg",
+                "frequence": "2x/jour"
+              }
+            ],
+            "preparation": "Prêt à l'emploi - IV lente 30-120 min"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Amphotéricine B, céftriaxone, chlorpromazine, diazépam, pentamidine, phénytoïne",
+    "contreIndications": "Interactions médicamenteuses: IMAO, sympathomimétiques",
+    "surdosage": "Thrombopénie, anémie, neuropathie périphérique (si traitement >28j). Surveillance NFS hebdomadaire",
+    "aSavoir": "Activité sur SARM et ERV. Bactériostatique. T2A"
+  },
+  {
+    "nom": "Magnésium sulfate",
+    "nomCommercial": "MAGNESIUM SULFATE",
+    "galenique": "Solution injectable 1,5 g/10 mL (15%)",
+    "indications": [
+      {
+        "label": "Hypomagnésémie, torsades de pointes, asthme sévère",
+        "posologies": [
+          {
+            "voie": "IV",
+            "indication": "Torsades de pointes",
+            "dose": "25-50 mg/kg (max 2 g)",
+            "preparation": "Bolus IV lent sur 10-20 min"
+          },
+          {
+            "indication": "Asthme aigu grave",
+            "dose": "25-75 mg/kg (max 2 g)",
+            "preparation": "Perfusion IV 20-60 min"
+          },
+          {
+            "indication": "Hypomagnésémie",
+            "doseKg": "25-50 mg",
+            "preparation": "IV lente ou perfusion selon sévérité"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Alcool, bicarbonates, calcium, salicylate de sodium",
+    "contreIndications": "Insuffisance rénale sévère, bloc AV",
+    "surdosage": "Surveillance magnésémie, réflexes ostéotendineux. Surdosage: dépression respiratoire, trouble conduction cardiaque",
+    "aSavoir": "Administration IV lente impérative. Apport concomitant de K+ si besoin"
+  },
+  {
+    "nom": "Méthylprednisolone",
+    "nomCommercial": "SOLUMEDROL",
+    "galenique": "Poudre injectable 40 mg, 120 mg, 500 mg, 1 g",
+    "indications": [
+      {
+        "label": "Corticoïde - Inflammation, allergie, immunosuppression",
+        "posologies": [
+          {
+            "voie": "IV/IM",
+            "indication": "Anti-inflammatoire",
+            "doseKgMin": 0.5,
+            "doseKgMax": 2,
+            "unite": "mg",
+            "frequence": "jour"
+          },
+          {
+            "indication": "Bolus (rejet greffe, polyarthrite)",
+            "dose": "10-30 mg/kg (max 1 g)",
+            "duree": "3 jours",
+            "preparation": "Reconstitution: eau ppi fournie. Dilution G5% ou NaCl 0,9% - IV lente 30-60 min"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Allopurinol, ciprofloxacine, diltiazem, glycopyrrolate, propofol",
+    "contreIndications": "Infection non contrôlée (sauf indication vitale)",
+    "surdosage": "Effets secondaires: hyperglycémie, HTA, immunosuppression, troubles psychiques",
+    "aSavoir": "Équivalence: 4 mg méthylprednisolone = 5 mg prednisolone = 20 mg hydrocortisone"
+  },
+  {
+    "nom": "Métoclopramide",
+    "nomCommercial": "PRIMPERAN",
+    "galenique": "Solution injectable 10 mg/2 mL",
+    "indications": [
+      {
+        "label": "Antiémétique, prokinétique",
+        "posologies": [
+          {
+            "voie": "IV/IM",
+            "doseKg": 0.1,
+            "doseKgMax": 0.15,
+            "unite": "mg",
+            "frequence": "3x/jour",
+            "doseMax": 10,
+            "preparation": "IV directe lente 1-2 min ou IM"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A administrer seul",
+    "contreIndications": "Phéochromocytome, épilepsie non contrôlée, hémorragie/perforation digestive, enfant <1 an",
+    "surdosage": "Effets extrapyramidaux (dystonie aiguë), somnolence. Traitement: anticholinergiques (tropatépine)",
+    "aSavoir": "Utilisation limitée chez l'enfant. Surveillance effets neurologiques"
+  },
+  {
+    "nom": "Métopimazine",
+    "nomCommercial": "VOGALENE",
+    "galenique": "Solution injectable 5 mg/1 mL",
+    "indications": [
+      {
+        "label": "Antiémétique",
+        "posologies": [
+          {
+            "voie": "IM",
+            "tranches": [
+              {
+                "ageMin": 6,
+                "ageMinUnite": "ans",
+                "dose": 2.5,
+                "unite": "mg",
+                "frequence": "2-3x/jour"
+              },
+              {
+                "ageMin": 15,
+                "ageMinUnite": "ans",
+                "dose": 5,
+                "unite": "mg",
+                "frequence": "2-3x/jour"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "contreIndications": "Épilepsie, phéochromocytome, maladie de Parkinson",
+    "surdosage": "Effets extrapyramidaux possibles",
+    "aSavoir": "Voie IM uniquement pour la forme injectable"
+  },
+  {
+    "nom": "Midazolam",
+    "nomCommercial": "HYPNOVEL",
+    "galenique": "Solution injectable 1 mg/mL et 5 mg/mL",
+    "indications": [
+      {
+        "label": "Benzodiazépine - Sédation, convulsions",
+        "posologies": [
+          {
+            "voie": "IV",
+            "indication": "Sédation procédurale",
+            "doseKgMin": 0.05,
+            "doseKgMax": 0.2,
+            "unite": "mg",
+            "preparation": "Titration par 0,05 mg/kg toutes les 2-3 min"
+          },
+          {
+            "indication": "Convulsions",
+            "doseKg": 0.15,
+            "unite": "mg",
+            "preparation": "Bolus IV/IO"
+          },
+          {
+            "voie": "Intranasale",
+            "doseKg": 0.2,
+            "doseKgMax": 0.5,
+            "unite": "mg",
+            "preparation": "0,2-0,3 mL dans chaque narine avec seringue"
+          },
+          {
+            "voie": "IVSE",
+            "doseKgMin": 1,
+            "doseKgMax": 6,
+            "unite": "µg/kg/min",
+            "preparation": "Sédation continue - Dilution NaCl 0,9% ou G5%"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Amphotéricine B, furosémide, hydrocortisone",
+    "contreIndications": "Insuffisance respiratoire non ventilée, myasthénie",
+    "surdosage": "Dépression respiratoire. Antidote: flumazénil 0,01 mg/kg",
+    "aSavoir": "Surveillance cardiorespiratoire continue. Courte durée d'action"
+  },
+  {
+    "nom": "Morphine chlorhydrate",
+    "nomCommercial": "MORPHINE",
+    "galenique": "Solution injectable 10 mg/mL, 20 mg/mL, 50 mg/mL",
+    "indications": [
+      {
+        "label": "Antalgique opioïde palier III",
+        "posologies": [
+          {
+            "voie": "IV",
+            "indication": "Douleur aiguë - Titration",
+            "doseKg": 0.1,
+            "unite": "mg",
+            "preparation": "Titration par 0,025 mg/kg toutes les 5 min jusqu'à analgésie. Dilution NaCl 0,9%"
+          },
+          {
+            "voie": "IVSE",
+            "indication": "Analgésie continue",
+            "doseKgMin": 10,
+            "doseKgMax": 40,
+            "unite": "µg/kg/h",
+            "preparation": "Adaptation selon douleur"
+          },
+          {
+            "voie": "SC",
+            "doseKg": 0.1,
+            "doseKgMax": 0.2,
+            "unite": "mg",
+            "frequence": "4h"
+          }
+        ]
+      }
+    ],
+    "contreIndications": "Insuffisance respiratoire aiguë non ventilée",
+    "surdosage": "Dépression respiratoire, myosis, coma. Antidote: naloxone 0,01 mg/kg (0,1 mg si néonatal)",
+    "aSavoir": "Surveillance FR, SpO2. Antalgique de référence. Stupéfiant: traçabilité obligatoire"
+  },
+  {
+    "nom": "Naloxone",
+    "nomCommercial": "NARCAN",
+    "galenique": "Solution injectable 0,4 mg/mL",
+    "indications": [
+      {
+        "label": "Antagoniste des opioïdes",
+        "posologies": [
+          {
+            "voie": "IV/IM/SC",
+            "indication": "Surdosage opioïdes",
+            "doseKg": 0.01,
+            "unite": "mg",
+            "doseMax": 2,
+            "preparation": "Répéter toutes les 2-3 min si besoin (max 10 mg total). Dilution NaCl 0,9% possible"
+          },
+          {
+            "indication": "Dépression respiratoire néonatale",
+            "dose": 0.1,
+            "unite": "mg",
+            "preparation": "IV/IM/SC - Répéter si besoin"
+          }
+        ]
+      }
+    ],
+    "contreIndications": "Pas de contre-indication en urgence vitale",
+    "surdosage": "Peut déclencher syndrome de sevrage chez patient dépendant. Durée d'action courte: surveillance prolongée",
+    "aSavoir": "Demi-vie plus courte que morphine: risque de re-narcotisation"
+  },
+  {
+    "nom": "Nicardipine",
+    "nomCommercial": "LOXEN",
+    "galenique": "Solution injectable 10 mg/10 mL (1 mg/mL)",
+    "indications": [
+      {
+        "label": "Antihypertenseur - Inhibiteur calcique",
+        "posologies": [
+          {
+            "voie": "IVSE",
+            "doseMin": "0,5 µg/kg/min",
+            "doseMax": "4 µg/kg/min",
+            "preparation": "Dilution G5% ou NaCl 0,9% - Titration progressive selon PA"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Furosémide, héparine, bicarbonate de sodium",
+    "contreIndications": "Choc cardiogénique, sténose aortique sévère",
+    "surdosage": "Hypotension, tachycardie réflexe, flush. Surveillance continue PA",
+    "aSavoir": "Photosensible: protéger de la lumière. Monitorage cardiorespiratoire"
+  },
+  {
+    "nom": "Noradrénaline",
+    "nomCommercial": "LEVOPHED",
+    "galenique": "Solution injectable 8 mg/4 mL (2 mg/mL) ou 16 mg/8 mL",
+    "indications": [
+      {
+        "label": "Vasopresseur - Choc",
+        "posologies": [
+          {
+            "voie": "IVSE centrale",
+            "doseMin": "0,05 µg/kg/min",
+            "doseMax": "2 µg/kg/min",
+            "preparation": "Dilution G5% exclusivement - Voie centrale exclusive"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Thiopental, bicarbonates, sels ferriques",
+    "contreIndications": "Contre-indication relative: hypovolémie non corrigée",
+    "surdosage": "Nécrose si extravasation. Ischémie périphérique. Surveillance continue PA, diurèse, perfusion périphérique",
+    "aSavoir": "Voie veineuse centrale impérative. Correction volémie avant/pendant. Photosensible"
+  },
+  {
+    "nom": "Octréotide",
+    "nomCommercial": "SANDOSTATINE",
+    "galenique": "Solution injectable 50 µg/mL, 100 µg/mL, 500 µg/mL",
+    "indications": [
+      {
+        "label": "Analogue somatostatine - Hémorragie digestive, hyperinsulinisme",
+        "posologies": [
+          {
+            "voie": "IV/SC",
+            "indication": "Hémorragie digestive haute",
+            "doseCharge": "1-2 µg/kg bolus",
+            "doseEntretien": "1-2 µg/kg/h IVSE"
+          },
+          {
+            "indication": "Hyperinsulinisme",
+            "doseKgMin": 1,
+            "doseKgMax": 10,
+            "unite": "µg/kg/h",
+            "preparation": "IVSE - Adaptation selon glycémies"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Solutions lipidiques",
+    "surdosage": "Hyperglycémie ou hypoglycémie, troubles digestifs, lithiase biliaire",
+    "aSavoir": "Surveillance glycémique. T2A"
+  },
+  {
+    "nom": "Oméprazole",
+    "nomCommercial": "MOPRAL / OMEPRAZOLE",
+    "galenique": "Poudre injectable 40 mg",
+    "indications": [
+      {
+        "label": "Inhibiteur pompe à protons",
         "posologies": [
           {
             "voie": "IV",
             "tranches": [
               {
                 "poidsMax": 10,
-                "doseKg": 7.5,
-                "unite": "mg"
+                "dose": 10,
+                "unite": "mg",
+                "frequence": "jour"
               },
               {
                 "poidsMin": 10,
-                "doseKg": 15,
+                "poidsMax": 20,
+                "dose": 20,
+                "unite": "mg",
+                "frequence": "jour"
+              },
+              {
+                "poidsMin": 20,
+                "dose": 40,
+                "unite": "mg",
+                "frequence": "jour"
+              }
+            ],
+            "preparation": "Reconstitution: solvant fourni. Dilution G5% ou NaCl 0,9% 100 mL - IV lente 20-30 min"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "A administrer seul",
+    "aSavoir": "AMM pédiatrique limitée. Utilisation hors AMM fréquente"
+  },
+  {
+    "nom": "Ondansétron",
+    "nomCommercial": "ZOPHREN",
+    "galenique": "Solution injectable 4 mg/2 mL et 8 mg/4 mL",
+    "indications": [
+      {
+        "label": "Antiémétique - Antagoniste 5-HT3",
+        "posologies": [
+          {
+            "voie": "IV",
+            "indication": "Chimiothérapie/radiothérapie",
+            "tranches": [
+              {
+                "surfaceMax": 0.6,
+                "dose": 5,
+                "unite": "mg/m²"
+              },
+              {
+                "surfaceMin": 0.6,
+                "dose": 8,
                 "unite": "mg"
               }
             ],
+            "preparation": "Dilution NaCl 0,9% ou G5% 50-100 mL - IV lente 15 min"
+          },
+          {
+            "indication": "Nausées/vomissements postopératoires",
+            "doseKg": 0.1,
             "unite": "mg",
-            "doseMax": 1000,
-            "preparation": "Perfusion IV 15 min - Toutes les 6h"
+            "doseMax": 4,
+            "preparation": "Bolus IV lent"
           }
         ]
       }
     ],
-    "contreIndications": "Insuffisance hépatique sévère",
-    "surdosage": "Toxicité hépatique - Antidote: N-acétylcystéine",
-    "aSavoir": "Respecter intervalle de 6h entre les prises"
+    "incompatibilites": "Aciclovir, allopurinol, amphotéricine B, furosémide",
+    "contreIndications": "Allongement QT congénital",
+    "surdosage": "Allongement QT, troubles visuels transitoires, constipation",
+    "aSavoir": "Surveillance ECG si facteurs de risque QT long"
   },
   {
-    "nom": "Adrénaline",
-    "galenique": "Ampoule 1 mg/1 mL",
+    "nom": "Paracétamol IV",
+    "nomCommercial": "PERFALGAN",
+    "galenique": "Solution perfusion 10 mg/mL, flacons 500 mg/50 mL et 1000 mg/100 mL",
     "indications": [
       {
-        "label": "Arrêt cardiaque",
+        "label": "Antalgique, antipyrétique",
         "posologies": [
           {
-            "voie": "IV/IO",
-            "doseKg": 0.01,
-            "unite": "mg",
-            "doseMax": 1,
-            "preparation": "Dilution 1:10 000 - Répéter toutes les 3-5 min"
-          }
-        ]
-      },
-      {
-        "label": "Anaphylaxie",
-        "posologies": [
-          {
-            "voie": "IM",
-            "doseKg": 0.01,
-            "unite": "mg",
-            "doseMax": 0.5,
-            "preparation": "IM cuisse externe - 0.15 mg si <15 kg, 0.3 mg si 15-30 kg, 0.5 mg si >30 kg"
-          }
-        ]
-      },
-      {
-        "label": "Perfusion continue",
-        "posologies": [
-          {
-            "voie": "IVSE",
-            "doseKgMin": 0.1,
-            "doseKgMax": 1,
-            "unite": "µg/kg/min",
-            "preparation": "Diluer 1 amp (1 mg) dans 9 mL NaCl = 100 µg/mL"
+            "voie": "IV",
+            "tranches": [
+              {
+                "poidsMin": 10,
+                "doseKg": 15,
+                "unite": "mg",
+                "frequence": "6h",
+                "doseMax": 1000,
+                "doseMaxJour": 4000
+              },
+              {
+                "poidsMax": 10,
+                "doseKg": 7.5,
+                "unite": "mg",
+                "frequence": "6h"
+              }
+            ],
+            "preparation": "Prêt à l'emploi - IV lente 15 min minimum"
           }
         ]
       }
     ],
-    "contreIndications": "Aucune en urgence vitale",
-    "surdosage": "Arythmie, HTA sévère, ischémie myocardique",
-    "aSavoir": "Surveillance continue de la PA et FC"
+    "contreIndications": "Insuffisance hépatocellulaire sévère",
+    "surdosage": "Hépatotoxicité dose-dépendante. Antidote: N-acétylcystéine",
+    "aSavoir": "Respecter intervalle minimum 6h entre les doses. Dose max: 60 mg/kg/j chez enfant, 4 g/j chez adulte"
   },
   {
-    "nom": "Midazolam",
-    "galenique": "Ampoule 5 mg/5 mL (1 mg/mL)",
+    "nom": "Phénytoïne",
+    "nomCommercial": "DILANTIN / DI-HYDAN",
+    "galenique": "Solution injectable 50 mg/mL",
     "indications": [
       {
-        "label": "Convulsions",
+        "label": "Antiépileptique",
         "posologies": [
           {
-            "voie": "IV/IO",
-            "doseKg": 0.2,
+            "voie": "IV",
+            "indication": "Dose de charge",
+            "doseKg": "15-20 mg",
+            "preparation": "Dilution NaCl 0,9% exclusivement (max 10 mg/mL) - IV lente max 1 mg/kg/min (max 50 mg/min)"
+          },
+          {
+            "indication": "Dose d'entretien",
+            "doseKg": "5-8 mg/kg/jour en 1-2 fois"
+          }
+        ]
+      }
+    ],
+    "incompatibilites": "Ne pas mélanger à G5% (précipitation). Nombreuses incompatibilités",
+    "contreIndications": "Bloc AV 2ème-3ème degré, porphyrie",
+    "surdosage": "Syndrome cérébelleux, nystagmus, troubles conduction cardiaque. Surveillance: phénytoinémie (10-20 mg/L), ECG, PA",
+    "aSavoir": "Voie IV stricte: nécrose si extravasation. Nombreuses interactions médicamenteuses"
+  },
+  {
+    "nom": "Propofol",
+    "nomCommercial": "DIPRIVAN",
+    "galenique": "Émulsion injectable 10 mg/mL (1%) et 20 mg/mL (2%)",
+    "indications": [
+      {
+        "label": "Anesthésique hypnotique",
+        "posologies": [
+          {
+            "voie": "IV",
+            "indication": "Induction anesthésie",
+            "doseKgMin": 2,
+            "doseKgMax": 4,
             "unite": "mg",
-            "doseMax": 10,
             "preparation": "Bolus IV lent"
           },
           {
-            "voie": "Intranasale",
-            "doseKg": 0.3,
-            "unite": "mg",
-            "doseMax": 10,
-            "preparation": "0.2-0.3 mL dans chaque narine"
-          }
-        ]
-      },
-      {
-        "label": "Sédation procédurale",
-        "posologies": [
-          {
-            "voie": "IV",
-            "doseKgMin": 0.05,
-            "doseKgMax": 0.2,
-            "unite": "mg",
-            "doseMax": 5,
-            "preparation": "Titration par 0.05 mg/kg toutes les 2-3 min"
-          }
-        ]
-      }
-    ],
-    "contreIndications": "Insuffisance respiratoire non ventilée",
-    "surdosage": "Dépression respiratoire - Antidote: Flumazénil 0.01 mg/kg",
-    "aSavoir": "Demi-vie courte - Surveillance continue nécessaire"
-  },
-  {
-    "nom": "Morphine",
-    "galenique": "Ampoule 10 mg/mL",
-    "indications": [
-      {
-        "label": "Douleur sévère",
-        "posologies": [
-          {
-            "voie": "IV",
-            "doseKg": 0.1,
-            "unite": "mg",
-            "doseMax": 10,
-            "preparation": "Titration par 0.025 mg/kg toutes les 5 min - Diluer dans NaCl"
-          }
-        ]
-      },
-      {
-        "label": "Analgésie continue",
-        "posologies": [
-          {
-            "voie": "IVSE",
-            "doseKgMin": 10,
-            "doseKgMax": 40,
-            "unite": "µg/kg/h",
-            "preparation": "Seringue électrique - Surveillance continue"
-          }
-        ]
-      }
-    ],
-    "contreIndications": "Insuffisance respiratoire aiguë non ventilée",
-    "surdosage": "Dépression respiratoire - Antidote: Naloxone 0.01 mg/kg",
-    "aSavoir": "Surveillance FR, SpO2 - Antalgique de référence"
-  },
-  {
-    "nom": "Amiodarone",
-    "galenique": "Ampoule 150 mg/3 mL",
-    "indications": [
-      {
-        "label": "Tachycardie ventriculaire / FV réfractaire",
-        "posologies": [
-          {
-            "voie": "IV/IO",
-            "doseKg": 5,
-            "unite": "mg",
-            "doseMax": 300,
-            "preparation": "Bolus sur 20-60 min dans G5% - Pas de NaCl"
-          }
-        ]
-      }
-    ],
-    "contreIndications": "Bradycardie, dysthyroïdie non contrôlée",
-    "surdosage": "Hypotension, bradycardie",
-    "aSavoir": "Éviter association avec QT longs - Risque de phlébite"
-  },
-  {
-    "nom": "Kétamine",
-    "galenique": "Ampoule 50 mg/mL",
-    "indications": [
-      {
-        "label": "Induction anesthésie",
-        "posologies": [
-          {
-            "voie": "IV",
-            "doseKgMin": 1,
-            "doseKgMax": 2,
-            "unite": "mg",
-            "preparation": "Injection lente sur 60 sec"
-          },
-          {
-            "voie": "IM",
-            "doseKgMin": 4,
-            "doseKgMax": 6,
-            "unite": "mg",
-            "preparation": "IM si pas d'accès veineux"
-          }
-        ]
-      },
-      {
-        "label": "Analgésie procédurale",
-        "posologies": [
-          {
-            "voie": "IV",
-            "doseKgMin": 0.5,
-            "doseKgMax": 1,
-            "unite": "mg",
-            "preparation": "Dose sub-dissociative - Titration"
-          }
-        ]
-      }
-    ],
-    "contreIndications": "HTA non contrôlée, trauma crânien sévère",
-    "surdosage": "Hypertension, tachycardie, hallucinations",
-    "aSavoir": "Préserver réflexes des voies aériennes - Associer benzodiazépine"
-  },
-  {
-    "nom": "Fentanyl",
-    "galenique": "Ampoule 50 µg/mL",
-    "indications": [
-      {
-        "label": "Analgésie",
-        "posologies": [
-          {
-            "voie": "IV",
+            "indication": "Sédation",
             "doseKgMin": 1,
             "doseKgMax": 3,
-            "unite": "µg",
-            "preparation": "Bolus lent - Titration toutes les 5 min"
-          }
-        ]
-      },
-      {
-        "label": "Analgésie continue",
-        "posologies": [
-          {
-            "voie": "IVSE",
-            "doseKgMin": 1,
-            "doseKgMax": 5,
-            "unite": "µg/kg/h",
-            "preparation": "Seringue électrique"
+            "unite": "mg/kg/h",
+            "preparation": "IVSE - Titration selon profondeur sédation"
           }
         ]
       }
     ],
-    "contreIndications": "Insuffisance respiratoire non ventilée",
-    "surdosage": "Dépression respiratoire, rigidité thoracique - Naloxone",
-    "aSavoir": "100x plus puissant que morphine - Courte durée d'action"
+    "incompatibilites": "A administrer seul. Nombreuses incompatibilités",
+    "contreIndications": "Allergie œuf, soja. Utilisation prolongée (>48h) déconseillée chez enfant <16 ans",
+    "surdosage": "Dépression cardiorespiratoire, hypotension, bradycardie. Syndrome perfusion propofol (rare, grave)",
+    "aSavoir": "Émulsion lipidique: risque contamination bactérienne. Utilisation 6h après ouverture. Douleur à l'injection"
   }
 ]
