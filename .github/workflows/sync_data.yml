@@ -22,7 +22,7 @@ jobs:
       - name: Push to ped_app_data repo
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.PED_APP_DATA_SYNC }}
+          github_token: ${{ secrets.SECOND_REPO_TOKEN }}
           external_repository: Z4rsi0/ped_app_data
           publish_dir: ./export
           publish_branch: main
