@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:provider/provider.dart';
+import 'services/medicament_resolver.dart';
+import 'providers/weight_provider.dart';
 
 class Protocole {
   final String nom;
@@ -27,13 +30,13 @@ class Protocole {
 class Etape {
   final String titre;
   final String? temps;
-  final String contenu;
+  final List<ElementEtape> elements;
   final String? attention;
 
   Etape({
     required this.titre,
     this.temps,
-    required this.contenu,
+    required this.elements,
     this.attention,
   });
 
@@ -41,14 +44,57 @@ class Etape {
     return Etape(
       titre: json['titre'] ?? '',
       temps: json['temps'],
-      contenu: json['contenu'] ?? '',
+      elements: (json['elements'] as List?)
+          ?.map((e) => ElementEtape.fromJson(e))
+          .toList() ?? [],
       attention: json['attention'],
     );
   }
 }
 
+class ElementEtape {
+  final String type; // "texte" ou "medicament"
+  final String? texte;
+  final ReferenceMedicament? medicament;
+
+  ElementEtape({
+    required this.type,
+    this.texte,
+    this.medicament,
+  });
+
+  factory ElementEtape.fromJson(Map<String, dynamic> json) {
+    return ElementEtape(
+      type: json['type'] ?? 'texte',
+      texte: json['texte'],
+      medicament: json['medicament'] != null
+          ? ReferenceMedicament.fromJson(json['medicament'])
+          : null,
+    );
+  }
+}
+
+class ReferenceMedicament {
+  final String nomMedicament;
+  final String indication;
+  final String? voie;
+
+  ReferenceMedicament({
+    required this.nomMedicament,
+    required this.indication,
+    this.voie,
+  });
+
+  factory ReferenceMedicament.fromJson(Map<String, dynamic> json) {
+    return ReferenceMedicament(
+      nomMedicament: json['nom'] ?? '',
+      indication: json['indication'] ?? '',
+      voie: json['voie'],
+    );
+  }
+}
+
 Future<List<String>> loadProtocolesList() async {
-  // Liste des fichiers de protocoles disponibles
   return [
     'etat_de_mal_epileptique',
     'arret_cardio_respiratoire',
@@ -81,6 +127,9 @@ class _ProtocolesScreenState extends State<ProtocolesScreen> {
 
   Future<void> _loadData() async {
     try {
+      // Charger le resolver de médicaments
+      await MedicamentResolver().loadMedicaments();
+      
       final files = await loadProtocolesList();
       Map<String, Protocole> loadedProtocoles = {};
       
@@ -89,6 +138,7 @@ class _ProtocolesScreenState extends State<ProtocolesScreen> {
           final protocole = await loadProtocole(file);
           loadedProtocoles[file] = protocole;
         } catch (e) {
+          // ignore: avoid_print
           print('Erreur chargement $file: $e');
         }
       }
@@ -231,13 +281,13 @@ class ProtocoleDetailScreen extends StatelessWidget {
           }
 
           final etape = protocole.etapes[index - 1];
-          return _buildEtapeCard(etape, index);
+          return _buildEtapeCard(context, etape, index);
         },
       ),
     );
   }
 
-  Widget _buildEtapeCard(Etape etape, int numero) {
+  Widget _buildEtapeCard(BuildContext context, Etape etape, int numero) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -267,7 +317,7 @@ class ProtocoleDetailScreen extends StatelessWidget {
                 Container(
                   width: 32,
                   height: 32,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
@@ -325,10 +375,7 @@ class ProtocoleDetailScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  etape.contenu,
-                  style: const TextStyle(fontSize: 15, height: 1.5),
-                ),
+                ...etape.elements.map((element) => ElementEtapeWidget(element: element)),
                 if (etape.attention != null) ...[
                   const SizedBox(height: 12),
                   Container(
@@ -358,6 +405,175 @@ class ProtocoleDetailScreen extends StatelessWidget {
                   ),
                 ],
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ElementEtapeWidget extends StatelessWidget {
+  final ElementEtape element;
+
+  const ElementEtapeWidget({super.key, required this.element});
+
+  @override
+  Widget build(BuildContext context) {
+    if (element.type == 'texte') {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(
+          element.texte ?? '',
+          style: const TextStyle(fontSize: 15, height: 1.5),
+        ),
+      );
+    } else if (element.type == 'medicament' && element.medicament != null) {
+      return MedicamentReferenceWidget(reference: element.medicament!);
+    }
+    return const SizedBox.shrink();
+  }
+}
+
+class MedicamentReferenceWidget extends StatelessWidget {
+  final ReferenceMedicament reference;
+
+  const MedicamentReferenceWidget({super.key, required this.reference});
+
+  @override
+  Widget build(BuildContext context) {
+    final weightProvider = Provider.of<WeightProvider>(context);
+    final resolver = MedicamentResolver();
+
+    PosologieResolue? posologie;
+    String? errorMessage;
+
+    try {
+      posologie = resolver.resolveMedicament(
+        nomMedicament: reference.nomMedicament,
+        indication: reference.indication,
+        voie: reference.voie,
+        poids: weightProvider.weight,
+      );
+    } catch (e) {
+      errorMessage = e.toString();
+    }
+
+    if (errorMessage != null) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.red.shade300),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.error, color: Colors.red.shade700),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Erreur: $errorMessage',
+                style: TextStyle(color: Colors.red.shade900, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (posologie == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.purple.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.purple.shade300, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.purple.shade600,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.medication, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      posologie.nomMedicament,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple.shade900,
+                      ),
+                    ),
+                    Text(
+                      posologie.voie,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.purple.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.calculate, size: 16, color: Colors.purple.shade600),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Dose:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  posologie.dose,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple.shade900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            posologie.preparation,
+            style: TextStyle(
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+              color: Colors.grey.shade700,
             ),
           ),
         ],

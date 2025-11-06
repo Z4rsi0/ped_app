@@ -5,73 +5,114 @@
     {
       "titre": "Reconnaissance de l'ACR",
       "temps": "< 10 sec",
-      "contenu": "• Absence de réponse aux stimulations\n• Absence de respiration normale (gasps = ACR)\n• Absence de pouls central (carotidien ou fémoral)\n\nSi doute sur le pouls après 10 sec → débuter RCP",
+      "elements": [
+        {
+          "type": "texte",
+          "texte": "• Absence de réponse aux stimulations\n• Absence de respiration normale (gasps = ACR)\n• Absence de pouls central (carotidien ou fémoral)\n\nSi doute sur le pouls après 10 sec → débuter RCP"
+        }
+      ],
       "attention": "Ne pas perdre de temps - Débuter RCP immédiatement"
     },
     {
-      "titre": "Appel à l'aide et matériel",
-      "temps": "Immédiat",
-      "contenu": "• APPELER À L'AIDE / déclencher code bleu\n• Apporter chariot d'urgence\n• Apporter défibrillateur\n• Chronomètre\n• Désigner un chef: coordonne, chronomètre, checklist\n• Désigner scribe: traçabilité",
-      "attention": "Ne jamais rester seul - Organisation en équipe"
-    },
-    {
-      "titre": "RCP de base - Compressions thoraciques",
-      "contenu": "RATIO 15:2 (si 2 sauveteurs) ou 30:2 (si 1 sauveteur)\n\nCompressions:\n• Fréquence: 100-120/min\n• Profondeur: 1/3 du diamètre thoracique (4-5 cm)\n• Position: tiers inférieur du sternum\n• Laisser le thorax reprendre sa position\n• Relais toutes les 2 minutes\n\nNourrisson < 1 an:\n• 2 doigts (technique à 2 pouces si 2 sauveteurs)\n\nEnfant > 1 an:\n• 1 main (petit enfant) ou 2 mains (grand enfant)",
+      "titre": "RCP de base - Compressions + Ventilation",
+      "elements": [
+        {
+          "type": "texte",
+          "texte": "RATIO 15:2 (si 2 sauveteurs) ou 30:2 (si 1 sauveteur)\n\nCompressions:\n• Fréquence: 100-120/min\n• Profondeur: 1/3 diamètre thoracique (4-5 cm)\n• Position: tiers inférieur du sternum\n• Laisser le thorax reprendre sa position\n• Relais toutes les 2 minutes\n\nNourrisson < 1 an: 2 doigts\nEnfant > 1 an: 1 ou 2 mains"
+        }
+      ],
       "attention": "Minimiser les interruptions - Compressions de qualité primordiales"
-    },
-    {
-      "titre": "Ventilation",
-      "contenu": "2 insufflations après 15 compressions (ou 30 si seul)\n\n• Libération des voies aériennes (subluxation mandibule)\n• Masque bien adapté + BAVU\n• Insufflations de 1 seconde\n• Volume: soulèvement thoracique visible\n• O2 à 15 L/min\n\nSi ventilation impossible:\n• Reprendre LVA\n• Continuer compressions uniquement",
-      "attention": "Éviter hyperventilation - Ne pas interrompre compressions > 10 sec"
     },
     {
       "titre": "Monitoring et voie d'abord",
       "temps": "Dès que possible",
-      "contenu": "• Scope/défibrillateur: analyser rythme\n• SpO2, ETCO2 si disponible\n• Voie veineuse ou intra-osseuse\n• Si échec VVP après 2 tentatives ou 90 sec → IO immédiate\n\nSites IO:\n• Tibia proximal (préféré)\n• Fémur distal\n• Humérus proximal",
+      "elements": [
+        {
+          "type": "texte",
+          "texte": "• Scope/défibrillateur: analyser rythme\n• SpO2, ETCO2 si disponible\n• Voie veineuse ou intra-osseuse\n• Si échec VVP après 2 tentatives ou 90 sec → IO immédiate\n\nSites IO:\n• Tibia proximal (préféré)\n• Fémur distal\n• Humérus proximal"
+        }
+      ],
       "attention": "IO = équivalent IV - Ne pas retarder les drogues"
     },
     {
-      "titre": "Analyse du rythme cardiaque",
+      "titre": "Analyse du rythme",
       "temps": "Toutes les 2 min",
-      "contenu": "2 RYTHMES POSSIBLES:\n\nA) Rythme CHOQUABLE (FV/TV sans pouls):\n   → Aller à l'étape \"Choc électrique\"\n\nB) Rythme NON CHOQUABLE (Asystolie/AESP):\n   → Aller à l'étape \"Adrénaline\"",
+      "elements": [
+        {
+          "type": "texte",
+          "texte": "2 RYTHMES POSSIBLES:\n\nA) Rythme CHOQUABLE (FV/TV sans pouls):\n   → Choc électrique + RCP\n\nB) Rythme NON CHOQUABLE (Asystolie/AESP):\n   → Adrénaline + RCP"
+        }
+      ],
       "attention": "Interrompre compressions < 5 sec pour analyser"
     },
     {
-      "titre": "CHOQUABLE: Choc électrique + RCP",
+      "titre": "CHOQUABLE: Choc + Adrénaline",
       "temps": "Si FV/TV",
-      "contenu": "1er choc:\n• 4 J/kg\n• Reprendre RCP IMMÉDIATEMENT 2 min (15:2)\n• Adrénaline 10 µg/kg IV/IO après 2ème choc\n\n2ème choc (après 2 min):\n• 4 J/kg\n• RCP immédiate 2 min\n\n3ème choc (après 2 min):\n• 4 J/kg\n• Amiodarone 5 mg/kg IV/IO\n• RCP immédiate 2 min\n\nChocs suivants:\n• 8 J/kg (max 10 J/kg)\n• Adrénaline toutes les 2 cycles (3-5 min)\n• 2ème dose Amiodarone possible",
+      "elements": [
+        {
+          "type": "texte",
+          "texte": "Chocs électriques:\n• 1er-3ème choc: 4 J/kg\n• Chocs suivants: 8 J/kg (max 10 J/kg)\n• RCP immédiate 2 min après chaque choc\n"
+        },
+        {
+          "type": "medicament",
+          "medicament": {
+            "nom": "Adrénaline",
+            "indication": "Arrêt cardiaque"
+          }
+        },
+        {
+          "type": "texte",
+          "texte": "→ Après le 2ème choc, puis toutes les 2 cycles (3-5 min)\n\n• Amiodarone 5 mg/kg IV/IO après 3ème choc\n• 2ème dose Amiodarone possible"
+        }
+      ],
       "attention": "SÉCURITÉ: s'écarter avant choc - Reprendre RCP sans délai"
     },
     {
-      "titre": "NON CHOQUABLE: Adrénaline + RCP",
+      "titre": "NON CHOQUABLE: Adrénaline immédiate",
       "temps": "Si Asystolie/AESP",
-      "contenu": "• Adrénaline 10 µg/kg (0.01 mg/kg) IV/IO\n  - Immédiatement dès voie d'abord\n  - Puis toutes les 3-5 minutes\n  - Dose maximale: 1 mg\n\n• RCP continue 15:2\n• Réévaluation toutes les 2 minutes\n• Si rythme devient choquable → protocole choc",
-      "attention": "Adrénaline = pilier du traitement - Ne pas oublier les doses répétées"
+      "elements": [
+        {
+          "type": "medicament",
+          "medicament": {
+            "nom": "Adrénaline",
+            "indication": "Arrêt cardiaque"
+          }
+        },
+        {
+          "type": "texte",
+          "texte": "→ Immédiatement dès voie d'abord\n→ Puis toutes les 3-5 minutes\n\n• RCP continue 15:2\n• Réévaluation toutes les 2 minutes\n• Si rythme devient choquable → protocole choc"
+        }
+      ],
+      "attention": "Adrénaline = pilier du traitement - Ne pas oublier doses répétées"
     },
     {
       "titre": "Causes réversibles - 4H 4T",
-      "contenu": "Rechercher et traiter:\n\n4H:\n• Hypoxie → Oxygénation, intubation\n• Hypovolémie → Remplissage 20 mL/kg\n• Hypo/Hyperkaliémie → Ionogramme, calcium\n• Hypothermie → Réchauffement\n\n4T:\n• Tamponnade → Échographie, drainage\n• Tension pneumothorax → Exsufflation\n• Toxiques → Antidotes spécifiques\n• Thrombose (coronaire/pulmonaire) → Thrombolyse si indication",
+      "elements": [
+        {
+          "type": "texte",
+          "texte": "Rechercher et traiter:\n\n4H:\n• Hypoxie → Oxygénation, intubation\n• Hypovolémie → Remplissage 20 mL/kg\n• Hypo/Hyperkaliémie → Ionogramme, calcium\n• Hypothermie → Réchauffement\n\n4T:\n• Tamponnade → Échographie, drainage\n• Tension pneumothorax → Exsufflation\n• Toxiques → Antidotes spécifiques\n• Thrombose → Thrombolyse si indication"
+        }
+      ],
       "attention": "Traiter la cause = augmente les chances de RACS"
     },
     {
-      "titre": "Intubation orotrachéale",
-      "contenu": "Indications:\n• ACR prolongé\n• Ventilation au masque inefficace\n• Protection des voies aériennes\n\nModalités:\n• Préoxygénation\n• Interruption RCP < 10 secondes\n• Vérification: ETCO2, auscultation, Rx\n• Fixer solidement\n• Sonde d'aspiration disponible",
-      "attention": "Ne pas retarder si échec - Reprendre ventilation au masque"
-    },
-    {
       "titre": "Médicaments complémentaires",
-      "contenu": "Selon contexte:\n\n• Calcium 10%: 0.2 mL/kg IV lent\n  - Hypocalcémie, hyperkaliémie, antagoniste calcique\n\n• Bicarbonate 4.2%: 1 mL/kg\n  - Acidose sévère, hyperkaliémie\n  - Après 10 min de RCP bien conduite\n\n• Glucose 10%: 2 mL/kg\n  - Si hypoglycémie documentée",
+      "elements": [
+        {
+          "type": "texte",
+          "texte": "Selon contexte:\n\n• Calcium 10%: 0.2 mL/kg IV lent\n  (Hypocalcémie, hyperkaliémie)\n\n• Bicarbonate 4.2%: 1 mL/kg\n  (Acidose sévère, après 10 min RCP)\n\n• Glucose 10%: 2 mL/kg\n  (Si hypoglycémie documentée)"
+        }
+      ],
       "attention": "Pas de routine - Indications précises uniquement"
     },
     {
-      "titre": "Décision d'arrêt de la RCP",
-      "temps": "≥ 20-30 min",
-      "contenu": "Discuter l'arrêt si:\n• RCP > 20-30 minutes sans RACS\n• Avis collégial avec médecin senior\n• Tenir compte: cause, terrain, conditions\n\nPoursuivre si:\n• Hypothermie\n• Intoxication\n• Cause réversible identifiée\n• Contexte de submersion\n\nDocumenter heure et circonstances",
-      "attention": "Décision médicale collégiale - Traçabilité obligatoire"
-    },
-    {
       "titre": "Post-RACS immédiat",
-      "contenu": "Si reprise d'activité cardiaque:\n\n• Maintenir SpO2 94-98%\n• PAS > P5 pour l'âge\n• Normocapnie (ETCO2 35-45)\n• Normoglycémie\n• Normothermie (éviter hyperthermie)\n• Analgésie/sédation\n\n• Transfert réanimation pédiatrique\n• Discuter hypothermie thérapeutique (33-36°C)\n• Bilan étiologique complet\n• Pronostic neurologique à distance",
+      "elements": [
+        {
+          "type": "texte",
+          "texte": "Si reprise d'activité cardiaque:\n\n• Maintenir SpO2 94-98%\n• PAS > P5 pour l'âge\n• Normocapnie (ETCO2 35-45)\n• Normoglycémie\n• Normothermie (éviter hyperthermie)\n• Analgésie/sédation\n\n• Transfert réanimation pédiatrique\n• Discuter hypothermie thérapeutique (33-36°C)\n• Bilan étiologique complet\n• Pronostic neurologique à distance"
+        }
+      ],
       "attention": "Surveillance continue - Prévenir lésions cérébrales secondaires"
     }
   ]
