@@ -8,9 +8,9 @@
         "posologies": [
           {
             "voie": "IV/IO",
-            "doseKg": 0.01,
-            "unite": "mg",
-            "doseMax": 1,
+            "doseKg": 10,
+            "unite": "µg",
+            "doseMax": 1000,
             "preparation": "Dilution 1:10 000 - Répéter toutes les 3-5 min"
           }
         ]
@@ -20,9 +20,9 @@
         "posologies": [
           {
             "voie": "IM",
-            "doseKg": 0.01,
-            "unite": "mg",
-            "doseMax": 0.5,
+            "doseKg": 10,
+            "unite": "µg",
+            "doseMax": 500,
             "preparation": "IM cuisse externe - 0.15 mg si <15 kg, 0.3 mg si 15-30 kg, 0.5 mg si >30 kg"
           }
         ]
