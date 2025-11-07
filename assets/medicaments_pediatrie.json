@@ -89,6 +89,87 @@
     "aSavoir": "Immunosuppresseur anti-TNF-α - Conservation au froid - T2A"
   },
   {
+    "nom": "Adrénaline",
+    "nomCommercial": "ADRENALINE",
+    "galenique": "Solution injectable 1 mg/1 mL et 1 mg/10 mL",
+    "indications": [
+      {
+        "label": "Arrêt cardiaque",
+        "posologies": [
+          {
+            "voie": "IV/IO",
+            "doseKg": 0.01,
+            "doseMax": 1,
+            "unite": "mg",
+            "preparation": "Dilution obligatoire au 1/10ème (1 mg dans 9 mL NaCl 0,9%) - IV/IO directe - Répéter toutes les 3-5 min"
+          }
+        ]
+      },
+      {
+        "label": "Anaphylaxie",
+        "posologies": [
+          {
+            "voie": "IM",
+            "tranches": [
+              {
+                "ageMax": 6,
+                "doseKg": 0.15,
+                "unite": "mg"
+              },
+              {
+                "ageMin": 6,
+                "ageMax": 12,
+                "doseKg": 0.3,
+                "unite": "mg"
+              },
+              {
+                "ageMin": 12,
+                "doseKg": 0.5,
+                "unite": "mg"
+              }
+            ],
+            "unite": "mg",
+            "preparation": "IM dans la face antéro-latérale de la cuisse - Répéter après 5-15 min si besoin"
+          },
+          {
+            "voie": "IVSE",
+            "doseKgMin": 0.1,
+            "doseKgMax": 1,
+            "unite": "µg/kg/min",
+            "preparation": "Anaphylaxie réfractaire - Dilution NaCl 0,9% - Titration progressive"
+          }
+        ]
+      },
+      {
+        "label": "Choc septique",
+        "posologies": [
+          {
+            "voie": "IVSE",
+            "doseKgMin": 0.05,
+            "doseKgMax": 2,
+            "unite": "µg/kg/min",
+            "preparation": "Dilution G5% ou NaCl 0,9% - Voie centrale préférable si >0,3 µg/kg/min"
+          }
+        ]
+      },
+      {
+        "label": "Bradycardie symptomatique",
+        "posologies": [
+          {
+            "voie": "IV",
+            "doseKgMin": 0.01,
+            "doseKgMax": 0.03,
+            "unite": "µg/kg/min",
+            "preparation": "Perfusion continue - Dilution NaCl 0,9%"
+          }
+        ]
+      }
+    ],
+    "contreIndications": "Pas de contre-indication en situation d'urgence vitale",
+    "surdosage": "Tachycardie, HTA, troubles du rythme, ischémie myocardique. Demi-vie très courte (2-3 min)",
+    "aSavoir": "Catécholamine vasopressive et inotrope. Photosensible. Incompatible avec les solutions alcalines. En ACR: débuter dès que possible et répéter toutes les 3-5 min"
+  },
+  {
     "nom": "Alizapride",
     "nomCommercial": "PLITICAN",
     "galenique": "Solution injectable 50 mg/2 mL",

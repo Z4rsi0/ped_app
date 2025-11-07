@@ -10,6 +10,7 @@ import 'services/data_sync_service.dart';
 // Modèle simplifié de médicament
 class Medicament {
   final String nom;
+  final String? nomCommercial;
   final String galenique;
   final List<Indication> indications;
   final String? contreIndications;
@@ -18,6 +19,7 @@ class Medicament {
 
   Medicament({
     required this.nom,
+    this.nomCommercial,
     required this.galenique,
     required this.indications,
     this.contreIndications,
@@ -28,6 +30,7 @@ class Medicament {
   factory Medicament.fromJson(Map<String, dynamic> json) {
     return Medicament(
       nom: json['nom'] ?? '',
+      nomCommercial: json['nomCommercial'],
       galenique: json['galenique'] ?? '',
       indications: (json['indications'] as List?)
           ?.map((i) => Indication.fromJson(i))
@@ -58,6 +61,8 @@ class Indication {
 class TranchePosologie {
   final double? poidsMin;
   final double? poidsMax;
+  final double? ageMin;
+  final double? ageMax;
   final double? doseKg;
   final double? doseKgMin;
   final double? doseKgMax;
@@ -66,6 +71,8 @@ class TranchePosologie {
   TranchePosologie({
     this.poidsMin,
     this.poidsMax,
+    this.ageMin,
+    this.ageMax,
     this.doseKg,
     this.doseKgMin,
     this.doseKgMax,
@@ -76,6 +83,8 @@ class TranchePosologie {
     return TranchePosologie(
       poidsMin: _parseDouble(json['poidsMin']),
       poidsMax: _parseDouble(json['poidsMax']),
+      ageMin: _parseDouble(json['ageMin']),
+      ageMax: _parseDouble(json['ageMax']),
       doseKg: _parseDouble(json['doseKg']),
       doseKgMin: _parseDouble(json['doseKgMin']),
       doseKgMax: _parseDouble(json['doseKgMax']),
@@ -295,7 +304,8 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
         filteredMedicaments = medicaments;
       } else {
         filteredMedicaments = medicaments
-            .where((m) => m.nom.toLowerCase().contains(query.toLowerCase()))
+            .where((m) => m.nom.toLowerCase().contains(query.toLowerCase()) ||
+                         (m.nomCommercial?.toLowerCase().contains(query.toLowerCase()) ?? false))
             .toList();
       }
     });
@@ -382,9 +392,23 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
               med.nom,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: Text(
-              med.galenique,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (med.nomCommercial != null)
+                  Text(
+                    med.nomCommercial!,
+                    style: TextStyle(
+                      color: Colors.blue.shade600,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                Text(
+                  med.galenique,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                ),
+              ],
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.push(
@@ -429,6 +453,15 @@ class MedicamentDetailScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (medicament.nomCommercial != null)
+                _buildSection(
+                  icon: Icons.local_pharmacy,
+                  title: "Nom commercial",
+                  content: medicament.nomCommercial!,
+                  color: Colors.blue,
+                ),
+              if (medicament.nomCommercial != null)
+                const SizedBox(height: 16),
               _buildSection(
                 icon: Icons.medical_services,
                 title: "Galénique",

@@ -6,7 +6,7 @@ class WeightProvider extends ChangeNotifier {
   double get weight => _weight;
 
   void setWeight(double newWeight) {
-    if (newWeight > 0 && newWeight <= 50) {
+    if (newWeight > 0 && newWeight <= 60) {
       _weight = newWeight;
       notifyListeners();
     }

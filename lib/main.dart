@@ -159,11 +159,17 @@ class _MainScreenState extends State<MainScreen> {
     const AnnuaireScreen(),
   ];
 
+  final List<String> _titles = [
+    'Thérapeutique Pédiatrique',
+    'Protocoles',
+    'Annuaire',
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thérapeutique Pédiatrique'),
+        title: Text(_titles[_selectedIndex]),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: const [
           GlobalWeightSelector(),
@@ -271,8 +277,8 @@ class GlobalWeightSelector extends StatelessWidget {
                 child: Slider(
                   value: weightProvider.weightToSliderValue(tempWeight),
                   min: 0,
-                  max: 90,
-                  divisions: 90,
+                  max: 100,
+                  divisions: 100,
                   activeColor: Colors.blue.shade600,
                   onChanged: (val) {
                     setState(() {
@@ -287,7 +293,7 @@ class GlobalWeightSelector extends StatelessWidget {
                 children: [
                   Text('0 kg', style: TextStyle(color: Colors.grey.shade600)),
                   Text('10 kg', style: TextStyle(color: Colors.grey.shade600)),
-                  Text('50 kg', style: TextStyle(color: Colors.grey.shade600)),
+                  Text('60 kg', style: TextStyle(color: Colors.grey.shade600)),
                 ],
               ),
             ],
@@ -383,8 +389,8 @@ class GlobalWeightSelectorCompact extends StatelessWidget {
                 child: Slider(
                   value: weightProvider.weightToSliderValue(tempWeight),
                   min: 0,
-                  max: 90,
-                  divisions: 90,
+                  max: 100,
+                  divisions: 100,
                   activeColor: Colors.blue.shade600,
                   onChanged: (val) {
                     setState(() {
@@ -399,7 +405,7 @@ class GlobalWeightSelectorCompact extends StatelessWidget {
                 children: [
                   Text('0 kg', style: TextStyle(color: Colors.grey.shade600)),
                   Text('10 kg', style: TextStyle(color: Colors.grey.shade600)),
-                  Text('50 kg', style: TextStyle(color: Colors.grey.shade600)),
+                  Text('60 kg', style: TextStyle(color: Colors.grey.shade600)),
                 ],
               ),
             ],
