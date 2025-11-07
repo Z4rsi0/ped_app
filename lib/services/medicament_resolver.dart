@@ -12,7 +12,8 @@ class MedicamentResolver {
   Future<void> loadMedicaments() async {
     if (_isLoaded) return;
     
-    final data = await DataSyncService.readFile('assets/medicaments_pediatrie.json');
+    // Lecture depuis medicaments_pediatrie.json (pas assets/)
+    final data = await DataSyncService.readFile('medicaments_pediatrie.json');
     final List<dynamic> jsonList = json.decode(data);
     _medicaments = jsonList.map((json) => MedicamentData.fromJson(json)).toList();
     _isLoaded = true;

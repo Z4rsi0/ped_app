@@ -103,7 +103,8 @@ Future<List<String>> loadProtocolesList() async {
 }
 
 Future<Protocole> loadProtocole(String filename) async {
-  final data = await DataSyncService.readFile('assets/protocoles/$filename.json');
+  // Lecture depuis protocoles/filename.json (pas assets/)
+  final data = await DataSyncService.readFile('protocoles/$filename.json');
   final jsonData = json.decode(data);
   return Protocole.fromJson(jsonData);
 }
