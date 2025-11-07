@@ -95,6 +95,7 @@ class ReferenceMedicament {
   }
 }
 
+/// Liste des protocoles disponibles
 Future<List<String>> loadProtocolesList() async {
   return [
     'etat_de_mal_epileptique',
@@ -102,9 +103,11 @@ Future<List<String>> loadProtocolesList() async {
   ];
 }
 
+/// Charge un protocole depuis son nom de fichier
+/// @param filename Nom du fichier sans extension, ex: 'etat_de_mal_epileptique'
 Future<Protocole> loadProtocole(String filename) async {
-  // Lecture depuis protocoles/filename.json (pas assets/)
-  final data = await DataSyncService.readFile('protocoles/$filename.json');
+  // Chemin complet avec préfixe assets/
+  final data = await DataSyncService.readFile('assets/protocoles/$filename.json');
   final jsonData = json.decode(data);
   return Protocole.fromJson(jsonData);
 }
@@ -120,6 +123,7 @@ class _ProtocolesScreenState extends State<ProtocolesScreen> {
   List<String> protocolesFiles = [];
   Map<String, Protocole> protocoles = {};
   bool isLoading = true;
+  String? errorMessage;
 
   @override
   void initState() {
@@ -139,25 +143,27 @@ class _ProtocolesScreenState extends State<ProtocolesScreen> {
         try {
           final protocole = await loadProtocole(file);
           loadedProtocoles[file] = protocole;
+          debugPrint('✅ Protocole chargé: $file');
         } catch (e) {
-          // ignore: avoid_print
-          print('Erreur chargement $file: $e');
+          debugPrint('❌ Erreur chargement protocole $file: $e');
         }
       }
       
-      setState(() {
-        protocolesFiles = files;
-        protocoles = loadedProtocoles;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur de chargement: $e')),
-        );
+        setState(() {
+          protocolesFiles = files;
+          protocoles = loadedProtocoles;
+          isLoading = false;
+          errorMessage = loadedProtocoles.isEmpty ? 'Aucun protocole chargé' : null;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ Erreur globale: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          errorMessage = e.toString();
+        });
       }
     }
   }
@@ -171,61 +177,115 @@ class _ProtocolesScreenState extends State<ProtocolesScreen> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : protocoles.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.description_outlined,
-                          size: 64, color: Colors.grey.shade400),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Aucun protocole disponible',
-                        style: TextStyle(
-                            fontSize: 16, color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: protocoles.length,
-                  itemBuilder: (context, index) {
-                    final file = protocolesFiles[index];
-                    final protocole = protocoles[file];
-                    
-                    if (protocole == null) return const SizedBox.shrink();
-                    
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 2,
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.orange.shade100,
-                          child: Icon(Icons.description,
-                              color: Colors.orange.shade700),
-                        ),
-                        title: Text(
-                          protocole.nom,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(
-                          protocole.description,
-                          style: TextStyle(
-                              color: Colors.grey.shade600, fontSize: 12),
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                ProtocoleDetailScreen(protocole: protocole),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+          : errorMessage != null
+              ? _buildErrorView()
+              : protocoles.isEmpty
+                  ? _buildEmptyView()
+                  : _buildProtocolesList(),
+    );
+  }
+
+  Widget _buildErrorView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
+            const SizedBox(height: 16),
+            Text(
+              'Erreur de chargement',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.red.shade700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              errorMessage ?? 'Erreur inconnue',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  isLoading = true;
+                  errorMessage = null;
+                });
+                _loadData();
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Réessayer'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.description_outlined,
+              size: 64, color: Colors.grey.shade400),
+          const SizedBox(height: 16),
+          Text(
+            'Aucun protocole disponible',
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProtocolesList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: protocoles.length,
+      itemBuilder: (context, index) {
+        final file = protocolesFiles[index];
+        final protocole = protocoles[file];
+        
+        if (protocole == null) return const SizedBox.shrink();
+        
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.orange.shade100,
+              child: Icon(Icons.description,
+                  color: Colors.orange.shade700),
+            ),
+            title: Text(
+              protocole.nom,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              protocole.description,
+              style: TextStyle(
+                  color: Colors.grey.shade600, fontSize: 12),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    ProtocoleDetailScreen(protocole: protocole),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

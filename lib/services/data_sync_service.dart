@@ -4,18 +4,26 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
+/// Service de synchronisation des données depuis GitHub
+/// 
+/// Architecture:
+/// - GitHub: https://raw.githubusercontent.com/Z4rsi0/ped_app_data/main/assets/xxx.json
+/// - Local: /data/user/0/.../app_flutter/assets/xxx.json
+/// - Assets embarqués: assets/xxx.json (fallback)
 class DataSyncService {
   static const String githubBaseUrl = 'https://raw.githubusercontent.com/Z4rsi0/ped_app_data/main';
   
-  // Map: clé = chemin local de stockage, valeur = URL GitHub
+  /// Liste des fichiers à synchroniser
+  /// Clé = chemin relatif depuis la racine (avec assets/)
+  /// Valeur = URL GitHub complète
   static const Map<String, String> files = {
-    'medicaments_pediatrie.json': '$githubBaseUrl/medicaments_pediatrie.json',
-    'annuaire.json': '$githubBaseUrl/annuaire.json',
-    'protocoles/etat_de_mal_epileptique.json': '$githubBaseUrl/protocoles/etat_de_mal_epileptique.json',
-    'protocoles/arret_cardio_respiratoire.json': '$githubBaseUrl/protocoles/arret_cardio_respiratoire.json',
+    'assets/medicaments_pediatrie.json': '$githubBaseUrl/assets/medicaments_pediatrie.json',
+    'assets/annuaire.json': '$githubBaseUrl/assets/annuaire.json',
+    'assets/protocoles/etat_de_mal_epileptique.json': '$githubBaseUrl/assets/protocoles/etat_de_mal_epileptique.json',
+    'assets/protocoles/arret_cardio_respiratoire.json': '$githubBaseUrl/assets/protocoles/arret_cardio_respiratoire.json',
   };
 
-  /// Vérifie et synchronise tous les fichiers au démarrage
+  /// Synchronise tous les fichiers depuis GitHub
   static Future<SyncResult> syncAllData() async {
     int success = 0;
     int failed = 0;
@@ -26,13 +34,16 @@ class DataSyncService {
         final downloaded = await _downloadFile(entry.key, entry.value);
         if (downloaded) {
           success++;
+          debugPrint('✅ Synchronisé: ${entry.key}');
         } else {
           failed++;
           errors.add(entry.key);
+          debugPrint('❌ Échec: ${entry.key}');
         }
       } catch (e) {
         failed++;
         errors.add('${entry.key}: $e');
+        debugPrint('❌ Exception: ${entry.key} - $e');
       }
     }
 
@@ -44,8 +55,8 @@ class DataSyncService {
     );
   }
 
-  /// Télécharge un fichier depuis GitHub et le sauvegarde localement
-  static Future<bool> _downloadFile(String filename, String url) async {
+  /// Télécharge un fichier depuis GitHub
+  static Future<bool> _downloadFile(String relativePath, String url) async {
     try {
       final response = await http.get(Uri.parse(url)).timeout(
         const Duration(seconds: 10),
@@ -53,72 +64,95 @@ class DataSyncService {
 
       if (response.statusCode == 200) {
         final dir = await getApplicationDocumentsDirectory();
-        final file = File('${dir.path}/$filename');
+        final file = File('${dir.path}/$relativePath');
         
         // Créer les sous-répertoires si nécessaire
         await file.parent.create(recursive: true);
         await file.writeAsString(response.body);
         
-        debugPrint('✅ Synchronisé: $filename');
         return true;
       } else {
-        debugPrint('❌ Erreur ${response.statusCode} pour $filename');
         return false;
       }
     } catch (e) {
-      debugPrint('❌ Exception pour $filename: $e');
       return false;
     }
   }
 
-  /// Lit un fichier (local en priorité, sinon assets)
-  static Future<String> readFile(String filename) async {
-    // Essayer de lire depuis le stockage local
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/$filename');
-      
-      if (await file.exists()) {
-        debugPrint('📖 Lecture locale: $filename');
-        return await file.readAsString();
-      }
-    } catch (e) {
-      debugPrint('⚠️ Erreur lecture locale de $filename: $e');
-    }
-
-    // Fallback sur les assets embarqués
-    // Construire le chemin assets
-    String assetPath = filename;
+  /// Lit un fichier (priorité: local > assets embarqués)
+  /// 
+  /// @param assetPath Chemin avec le préfixe 'assets/', ex: 'assets/annuaire.json'
+  /// @return Contenu du fichier
+  static Future<String> readFile(String assetPath) async {
+    // S'assurer que le chemin commence par 'assets/'
     if (!assetPath.startsWith('assets/')) {
       assetPath = 'assets/$assetPath';
     }
-    
-    debugPrint('📦 Fallback assets: $assetPath');
-    
+
+    // 1. Essayer de lire depuis le stockage local
     try {
-      return await rootBundle.loadString(assetPath);
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/$assetPath');
+      
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        debugPrint('📖 LOCAL: $assetPath');
+        return content;
+      }
     } catch (e) {
-      debugPrint('❌ Erreur chargement asset $assetPath: $e');
+      debugPrint('⚠️ Erreur lecture locale de $assetPath: $e');
+    }
+
+    // 2. Fallback sur les assets embarqués
+    try {
+      final content = await rootBundle.loadString(assetPath);
+      debugPrint('📦 ASSETS: $assetPath');
+      return content;
+    } catch (e) {
+      debugPrint('❌ Erreur assets $assetPath: $e');
       rethrow;
     }
   }
 
-  /// Force le téléchargement d'un fichier spécifique
-  static Future<bool> forceDownloadFile(String filename) async {
-    final url = files[filename];
-    if (url == null) return false;
-    return await _downloadFile(filename, url);
+  /// Vérifie si un fichier existe localement
+  static Future<bool> fileExistsLocally(String assetPath) async {
+    try {
+      if (!assetPath.startsWith('assets/')) {
+        assetPath = 'assets/$assetPath';
+      }
+      
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/$assetPath');
+      return await file.exists();
+    } catch (e) {
+      return false;
+    }
   }
 
-  /// Supprime tous les fichiers locaux (reset aux assets)
+  /// Force le téléchargement d'un fichier spécifique
+  static Future<bool> forceDownloadFile(String assetPath) async {
+    if (!assetPath.startsWith('assets/')) {
+      assetPath = 'assets/$assetPath';
+    }
+    
+    final url = files[assetPath];
+    if (url == null) {
+      debugPrint('❌ URL non trouvée pour: $assetPath');
+      return false;
+    }
+    
+    return await _downloadFile(assetPath, url);
+  }
+
+  /// Supprime tous les fichiers locaux (reset aux assets embarqués)
   static Future<void> clearLocalData() async {
     try {
       final dir = await getApplicationDocumentsDirectory();
-      for (var filename in files.keys) {
-        final file = File('${dir.path}/$filename');
+      for (var assetPath in files.keys) {
+        final file = File('${dir.path}/$assetPath');
         if (await file.exists()) {
           await file.delete();
-          debugPrint('🗑️ Supprimé: $filename');
+          debugPrint('🗑️ Supprimé: $assetPath');
         }
       }
     } catch (e) {
@@ -136,6 +170,17 @@ class DataSyncService {
     } catch (e) {
       return false;
     }
+  }
+
+  /// Obtient le statut de synchronisation de tous les fichiers
+  static Future<Map<String, bool>> getSyncStatus() async {
+    Map<String, bool> status = {};
+    
+    for (var assetPath in files.keys) {
+      status[assetPath] = await fileExistsLocally(assetPath);
+    }
+    
+    return status;
   }
 }
 
@@ -160,6 +205,14 @@ class SyncResult {
       return '✅ Tous les fichiers sont à jour ($success/$totalFiles)';
     } else {
       return '⚠️ $success/$totalFiles synchronisés - $failed erreur(s)';
+    }
+  }
+
+  String get detailedMessage {
+    if (allSuccess) {
+      return message;
+    } else {
+      return '$message\n\nErreurs:\n${errors.map((e) => '• $e').join('\n')}';
     }
   }
 }

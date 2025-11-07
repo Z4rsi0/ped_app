@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'data_sync_service.dart';
 
 class MedicamentResolver {
@@ -9,23 +10,36 @@ class MedicamentResolver {
   List<MedicamentData>? _medicaments;
   bool _isLoaded = false;
 
+  /// Charge la liste des médicaments depuis le fichier JSON
   Future<void> loadMedicaments() async {
-    if (_isLoaded) return;
+    if (_isLoaded) {
+      debugPrint('📋 Médicaments déjà chargés');
+      return;
+    }
     
-    // Lecture depuis medicaments_pediatrie.json (pas assets/)
-    final data = await DataSyncService.readFile('medicaments_pediatrie.json');
-    final List<dynamic> jsonList = json.decode(data);
-    _medicaments = jsonList.map((json) => MedicamentData.fromJson(json)).toList();
-    _isLoaded = true;
+    try {
+      // Lecture avec préfixe assets/
+      final data = await DataSyncService.readFile('assets/medicaments_pediatrie.json');
+      final List<dynamic> jsonList = json.decode(data);
+      _medicaments = jsonList.map((json) => MedicamentData.fromJson(json)).toList();
+      _isLoaded = true;
+      debugPrint('✅ ${_medicaments!.length} médicaments chargés');
+    } catch (e) {
+      debugPrint('❌ Erreur chargement médicaments: $e');
+      rethrow;
+    }
   }
 
+  /// Résout un médicament et calcule la posologie
   PosologieResolue? resolveMedicament({
     required String nomMedicament,
     required String indication,
     String? voie,
     required double poids,
   }) {
-    if (!_isLoaded || _medicaments == null) return null;
+    if (!_isLoaded || _medicaments == null) {
+      throw Exception('Médicaments non chargés - Appeler loadMedicaments() d\'abord');
+    }
 
     // Trouver le médicament
     final medicament = _medicaments!.firstWhere(
