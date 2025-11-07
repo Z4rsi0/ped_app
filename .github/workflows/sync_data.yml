@@ -12,12 +12,11 @@ jobs:
       - name: Checkout main repo
         uses: actions/checkout@v4
 
-      - name: Prepare export
+      - name: Prepare export with assets structure
         run: |
-          mkdir export
-          cp -r assets/*.json export/ || true
-          mkdir -p export/protocoles
-          cp -r assets/protocoles/*.json export/protocoles/ || true
+          mkdir -p export/assets/protocoles
+          cp assets/*.json export/assets/ || true
+          cp assets/protocoles/*.json export/assets/protocoles/ || true
 
       - name: Push to ped_app_data repo
         uses: peaceiris/actions-gh-pages@v3
