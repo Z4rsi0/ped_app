@@ -10,8 +10,8 @@ class DataSyncService {
   static const Map<String, String> files = {
     'medicaments_pediatrie.json': '$githubBaseUrl/medicaments_pediatrie.json',
     'annuaire.json': '$githubBaseUrl/annuaire.json',
-    'protocoles/etat_de_mal_epileptique.json': '$githubBaseUrl/protocoles/etat_de_mal_epileptique.json',
-    'protocoles/arret_cardio_respiratoire.json': '$githubBaseUrl/protocoles/arret_cardio_respiratoire.json',
+    'assets/protocoles/etat_de_mal_epileptique.json': '$githubBaseUrl/protocoles/etat_de_mal_epileptique.json',
+    'assets/protocoles/arret_cardio_respiratoire.json': '$githubBaseUrl/protocoles/arret_cardio_respiratoire.json',
   };
 
   /// Vérifie et synchronise tous les fichiers au démarrage
@@ -44,34 +44,32 @@ class DataSyncService {
   }
 
   /// Télécharge un fichier depuis GitHub et le sauvegarde localement
-  static Future<bool> _downloadFile(String filename, String url) async {
-    try {
-      // Télécharger depuis GitHub
-      final response = await http.get(Uri.parse(url)).timeout(
-        const Duration(seconds: 10),
-      );
+static Future<bool> _downloadFile(String filename, String url) async {
+  try {
+    final response = await http.get(Uri.parse(url)).timeout(
+      const Duration(seconds: 10),
+    );
 
-      if (response.statusCode == 200) {
-        // Sauvegarder localement
-        final dir = await getApplicationDocumentsDirectory();
-        final file = File('${dir.path}/$filename');
-        
-        // Créer les dossiers si nécessaire
-        await file.parent.create(recursive: true);
-        
-        await file.writeAsString(response.body);
-        
-        debugPrint('✅ Synchronisé: $filename');
-        return true;
-      } else {
-        debugPrint('❌ Erreur ${response.statusCode} pour $filename');
-        return false;
-      }
-    } catch (e) {
-      debugPrint('❌ Exception pour $filename: $e');
+    if (response.statusCode == 200) {
+      final dir = await getApplicationDocumentsDirectory();
+      // Enlever le préfixe assets/ pour le stockage local
+      final localFilename = filename.replaceFirst('assets/', '');
+      final file = File('${dir.path}/$localFilename');
+      
+      await file.parent.create(recursive: true);
+      await file.writeAsString(response.body);
+      
+      debugPrint('✅ Synchronisé: $filename');
+      return true;
+    } else {
+      debugPrint('❌ Erreur ${response.statusCode} pour $filename');
       return false;
     }
+  } catch (e) {
+    debugPrint('❌ Exception pour $filename: $e');
+    return false;
   }
+}
 
   /// Lit un fichier (local en priorité, sinon assets)
 static Future<String> readFile(String filename) async {
@@ -88,9 +86,11 @@ static Future<String> readFile(String filename) async {
   }
 
   // Fallback sur les assets embarqués
-  // Nettoyer complètement le chemin avant d'ajouter le préfixe
-  String assetPath = filename.replaceAll(RegExp(r'^(assets/)+'), '');
-  assetPath = 'assets/$assetPath';
+  // Nettoyer le chemin et s'assurer qu'il commence par assets/
+  String assetPath = filename;
+  if (!assetPath.startsWith('assets/')) {
+    assetPath = 'assets/$assetPath';
+  }
   
   debugPrint('📦 Fallback assets: $assetPath');
   
