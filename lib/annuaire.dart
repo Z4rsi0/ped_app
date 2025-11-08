@@ -60,10 +60,22 @@ class _AnnuaireScreenState extends State<AnnuaireScreen> {
       filteredServices = services;
     } else {
       final query = searchController.text.toLowerCase();
-      filteredServices = services.where((s) =>
-        s.nom.toLowerCase().contains(query) ||
-        (s.description?.toLowerCase().contains(query) ?? false)
-      ).toList();
+      filteredServices = services.where((s) {
+        // Recherche dans le nom du service
+        if (s.nom.toLowerCase().contains(query)) return true;
+        
+        // Recherche dans la description du service
+        if (s.description?.toLowerCase().contains(query) ?? false) return true;
+        
+        // Recherche dans les labels des contacts
+        for (var contact in s.contacts) {
+          if (contact.label?.toLowerCase().contains(query) ?? false) {
+            return true;
+          }
+        }
+        
+        return false;
+      }).toList();
     }
   }
 
@@ -187,7 +199,7 @@ class _AnnuaireScreenState extends State<AnnuaireScreen> {
       child: TextField(
         controller: searchController,
         decoration: InputDecoration(
-          labelText: "Rechercher un service",
+          labelText: "Rechercher un service ou contact",
           prefixIcon: const Icon(Icons.search),
           suffixIcon: searchController.text.isNotEmpty
               ? IconButton(
