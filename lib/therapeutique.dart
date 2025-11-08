@@ -232,6 +232,14 @@ class Posologie {
         }
         return '${(dose1 * 1000).toStringAsFixed(0)} µg';
       }
+      // Conversion mg -> g
+      if (dose1 >= 1000) {
+        // Convertir en g
+        if (dose2 != null) {
+          return '${(dose1 / 1000).toStringAsFixed(1)} - ${(dose2 / 1000).toStringAsFixed(1)} g';
+        }
+        return '${(dose1 / 1000).toStringAsFixed(1)} g';
+      }
     } else if (uniteOriginale == 'µg') {
       if (dose1 > 999) {
         // Convertir en mg
@@ -611,6 +619,14 @@ class _IndicationCardState extends State<IndicationCard> {
       builder: (context, weightProvider, child) {
         final doseCalculee = posologie.calculerDose(weightProvider.weight);
         
+        // Calcul de la dose/kg pour affichage
+        String doseParKg = '';
+        if (posologie.doseKg != null) {
+          doseParKg = '(${posologie.doseKg} ${posologie.unite}/kg)';
+        } else if (posologie.doseKgMin != null && posologie.doseKgMax != null) {
+          doseParKg = '(${posologie.doseKgMin} - ${posologie.doseKgMax} ${posologie.unite}/kg)';
+        }
+        
         return Container(
           margin: const EdgeInsets.only(top: 8),
           padding: const EdgeInsets.all(12),
@@ -649,13 +665,27 @@ class _IndicationCardState extends State<IndicationCard> {
                     const Icon(Icons.calculate, color: Colors.purple, size: 24),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        doseCalculee,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.purple,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            doseCalculee,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.purple,
+                            ),
+                          ),
+                          if (doseParKg.isNotEmpty)
+                            Text(
+                              doseParKg,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ],

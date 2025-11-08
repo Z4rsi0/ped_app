@@ -226,7 +226,9 @@ class GlobalWeightSelector extends StatelessWidget {
                     border: Border.all(color: Colors.blue.shade200, width: 2),
                   ),
                   child: Text(
-                    '${weightProvider.weight.toStringAsFixed(weightProvider.weight < 10 ? 1 : 0)} kg',
+                    weightProvider.weight < 1
+                      ? '${(weightProvider.weight * 1000).toStringAsFixed(0)} g'
+                      : '${weightProvider.weight.toStringAsFixed(weightProvider.weight < 10 ? 1 : 0)} kg',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -260,7 +262,9 @@ class GlobalWeightSelector extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '${tempWeight.toStringAsFixed(tempWeight < 10 ? 1 : 0)} kg',
+                tempWeight < 1 
+                  ? '${(tempWeight * 1000).toStringAsFixed(0)} g'
+                  : '${tempWeight.toStringAsFixed(tempWeight < 10 ? 1 : 0)} kg',
                 style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -268,32 +272,40 @@ class GlobalWeightSelector extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 4.0,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12.0),
-                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 24.0),
-                ),
-                child: Slider(
-                  value: weightProvider.weightToSliderValue(tempWeight),
-                  min: 0,
-                  max: 100,
-                  divisions: 100,
-                  activeColor: Colors.blue.shade600,
-                  onChanged: (val) {
-                    setState(() {
-                      tempWeight = weightProvider.sliderValueToWeight(val);
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Column(
                 children: [
-                  Text('0 kg', style: TextStyle(color: Colors.grey.shade600)),
-                  Text('10 kg', style: TextStyle(color: Colors.grey.shade600)),
-                  Text('60 kg', style: TextStyle(color: Colors.grey.shade600)),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 4.0,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12.0),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 24.0),
+                    ),
+                    child: Slider(
+                      value: weightProvider.weightToSliderValue(tempWeight),
+                      min: 0,
+                      max: WeightProvider.totalPositions.toDouble(),
+                      divisions: WeightProvider.totalPositions,
+                      activeColor: Colors.blue.shade600,
+                      onChanged: (val) {
+                        setState(() {
+                          tempWeight = weightProvider.sliderValueToWeight(val);
+                        });
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('400 g', style: TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w500)),
+                        Text('4 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10)),
+                        Text('7 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w600)),
+                        Text('10 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10)),
+                        Text('50 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -339,7 +351,9 @@ class GlobalWeightSelectorCompact extends StatelessWidget {
                   border: Border.all(color: Colors.blue.shade200, width: 2),
                 ),
                 child: Text(
-                  '${weightProvider.weight.toStringAsFixed(weightProvider.weight < 10 ? 1 : 0)} kg',
+                  weightProvider.weight < 1
+                    ? '${(weightProvider.weight * 1000).toStringAsFixed(0)} g'
+                    : '${weightProvider.weight.toStringAsFixed(weightProvider.weight < 10 ? 1 : 0)} kg',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
@@ -372,7 +386,9 @@ class GlobalWeightSelectorCompact extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '${tempWeight.toStringAsFixed(tempWeight < 10 ? 1 : 0)} kg',
+                tempWeight < 1 
+                  ? '${(tempWeight * 1000).toStringAsFixed(0)} g'
+                  : '${tempWeight.toStringAsFixed(tempWeight < 10 ? 1 : 0)} kg',
                 style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -380,32 +396,40 @@ class GlobalWeightSelectorCompact extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 4.0,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12.0),
-                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 24.0),
-                ),
-                child: Slider(
-                  value: weightProvider.weightToSliderValue(tempWeight),
-                  min: 0,
-                  max: 100,
-                  divisions: 100,
-                  activeColor: Colors.blue.shade600,
-                  onChanged: (val) {
-                    setState(() {
-                      tempWeight = weightProvider.sliderValueToWeight(val);
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Column(
                 children: [
-                  Text('0 kg', style: TextStyle(color: Colors.grey.shade600)),
-                  Text('10 kg', style: TextStyle(color: Colors.grey.shade600)),
-                  Text('60 kg', style: TextStyle(color: Colors.grey.shade600)),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 4.0,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12.0),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 24.0),
+                    ),
+                    child: Slider(
+                      value: weightProvider.weightToSliderValue(tempWeight),
+                      min: 0,
+                      max: WeightProvider.totalPositions.toDouble(),
+                      divisions: WeightProvider.totalPositions,
+                      activeColor: Colors.blue.shade600,
+                      onChanged: (val) {
+                        setState(() {
+                          tempWeight = weightProvider.sliderValueToWeight(val);
+                        });
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('400 g', style: TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w500)),
+                        Text('4 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10)),
+                        Text('7 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w600)),
+                        Text('10 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10)),
+                        Text('50 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ],
