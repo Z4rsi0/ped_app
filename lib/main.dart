@@ -171,7 +171,7 @@ class _MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         title: Text(_titles[_selectedIndex]),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: const [
+        actions: _selectedIndex == 2 ? null : const [
           GlobalWeightSelector(),
         ],
       ),
