@@ -21,8 +21,11 @@ class WeightProvider extends ChangeNotifier {
 
   void setWeight(double newWeight) {
     if (newWeight >= minWeight && newWeight <= maxWeight) {
-      _weight = newWeight;
-      notifyListeners();
+      // ✅ OPTIMISATION: Ne notifier que si changement réel
+      if (_weight != newWeight) {
+        _weight = newWeight;
+        notifyListeners();
+      }
     }
   }
 

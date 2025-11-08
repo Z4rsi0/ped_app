@@ -1,5 +1,6 @@
 // ignore_for_file: unnecessary_null_comparison, dead_code, unnecessary_brace_in_string_interps
 
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -66,7 +67,7 @@ class TranchePosologie {
   final double? doseKg;
   final double? doseKgMin;
   final double? doseKgMax;
-  final String? doses; // Pour les schémas complexes comme "S0: 80 mg, S2: 40 mg..."
+  final String? doses;
 
   TranchePosologie({
     this.poidsMin,
@@ -121,7 +122,7 @@ class Posologie {
   final List<TranchePosologie>? tranches;
   final String unite;
   final String preparation;
-  final dynamic doseMax; // peut être String ou double
+  final dynamic doseMax;
 
   Posologie({
     required this.voie,
@@ -145,7 +146,7 @@ class Posologie {
           .toList(),
       unite: json['unite'] ?? '',
       preparation: json['preparation'] ?? '',
-      doseMax: json['doseMax'], // Garder tel quel
+      doseMax: json['doseMax'],
     );
   }
 
@@ -164,14 +165,12 @@ class Posologie {
   }
 
   String calculerDose(double poids) {
-    // Si tranches de poids définies
     if (tranches != null && tranches!.isNotEmpty) {
       final tranche = tranches!.firstWhere(
         (t) => t.appliqueAPoids(poids),
         orElse: () => tranches!.first,
       );
       
-      // Si la tranche contient un schéma de doses textuelles
       if (tranche.doses != null) {
         return tranche.doses!;
       }
@@ -186,12 +185,10 @@ class Posologie {
       }
     }
     
-    // Sinon, dose variable globale
     if (doseKgMin != null && doseKgMax != null) {
       final doseMin = doseKgMin! * poids;
       final doseMax = doseKgMax! * poids;
       
-      // Gestion de la dose max
       double? doseMaxDouble = _parseDouble(doseMax);
       if (doseMaxDouble != null) {
         final doseMinFinal = doseMin > doseMaxDouble ? doseMaxDouble : doseMin;
@@ -201,7 +198,6 @@ class Posologie {
       
       return _formatDoseAvecUnite(doseMin, doseMax, unite);
     } else if (doseKg != null) {
-      // Dose fixe
       final dose = doseKg! * poids;
       
       double? doseMaxDouble = _parseDouble(doseMax);
@@ -223,18 +219,14 @@ class Posologie {
   }
 
   String _formatDoseAvecUnite(double dose1, double? dose2, String uniteOriginale) {
-    // Conversion mg <-> µg
     if (uniteOriginale == 'mg') {
       if (dose1 < 0.1) {
-        // Convertir en µg
         if (dose2 != null) {
           return '${(dose1 * 1000).toStringAsFixed(0)} - ${(dose2 * 1000).toStringAsFixed(0)} µg';
         }
         return '${(dose1 * 1000).toStringAsFixed(0)} µg';
       }
-      // Conversion mg -> g
       if (dose1 >= 1000) {
-        // Convertir en g
         if (dose2 != null) {
           return '${(dose1 / 1000).toStringAsFixed(1)} - ${(dose2 / 1000).toStringAsFixed(1)} g';
         }
@@ -242,7 +234,6 @@ class Posologie {
       }
     } else if (uniteOriginale == 'µg') {
       if (dose1 > 999) {
-        // Convertir en mg
         if (dose2 != null) {
           return '${(dose1 / 1000).toStringAsFixed(1)} - ${(dose2 / 1000).toStringAsFixed(1)} mg';
         }
@@ -250,7 +241,6 @@ class Posologie {
       }
     }
     
-    // Format normal
     if (dose2 != null) {
       return '${dose1.toStringAsFixed(1)} - ${dose2.toStringAsFixed(1)} $uniteOriginale';
     }
@@ -274,11 +264,15 @@ class TherapeutiqueScreen extends StatefulWidget {
   State<TherapeutiqueScreen> createState() => _TherapeutiqueScreenState();
 }
 
-class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
+class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   List<Medicament> medicaments = [];
   List<Medicament> filteredMedicaments = [];
   final searchController = TextEditingController();
   bool isLoading = true;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -289,16 +283,18 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
   Future<void> _loadData() async {
     try {
       final data = await loadMedicaments();
-      setState(() {
-        medicaments = data;
-        filteredMedicaments = medicaments;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
       if (mounted) {
+        setState(() {
+          medicaments = data;
+          filteredMedicaments = medicaments;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erreur de chargement: $e')),
         );
@@ -307,26 +303,36 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
   }
 
   void _filterMedicaments(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        filteredMedicaments = medicaments;
-      } else {
-        filteredMedicaments = medicaments
-            .where((m) => m.nom.toLowerCase().contains(query.toLowerCase()) ||
-                         (m.nomCommercial?.toLowerCase().contains(query.toLowerCase()) ?? false))
-            .toList();
+    // Debounce: attendre 300ms après la dernière frappe avant de filtrer
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          if (query.isEmpty) {
+            filteredMedicaments = medicaments;
+          } else {
+            filteredMedicaments = medicaments
+                .where((m) => m.nom.toLowerCase().contains(query.toLowerCase()) ||
+                             (m.nomCommercial?.toLowerCase().contains(query.toLowerCase()) ?? false))
+                .toList();
+          }
+        });
       }
     });
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Important pour AutomaticKeepAliveClientMixin
+    
     return Scaffold(
       body: Column(
         children: [
@@ -388,41 +394,44 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
       itemCount: filteredMedicaments.length,
       itemBuilder: (context, index) {
         final med = filteredMedicaments[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          elevation: 2,
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.blue.shade100,
-              child: Icon(Icons.medication, color: Colors.blue.shade700),
-            ),
-            title: Text(
-              med.nom,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (med.nomCommercial != null)
-                  Text(
-                    med.nomCommercial!,
-                    style: TextStyle(
-                      color: Colors.blue.shade600,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+        return RepaintBoundary(
+          child: Card(
+            key: ValueKey(med.nom),
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            elevation: 2,
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.blue.shade100,
+                child: Icon(Icons.medication, color: Colors.blue.shade700),
+              ),
+              title: Text(
+                med.nom,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (med.nomCommercial != null)
+                    Text(
+                      med.nomCommercial!,
+                      style: TextStyle(
+                        color: Colors.blue.shade600,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
+                  Text(
+                    med.galenique,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                   ),
-                Text(
-                  med.galenique,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                ],
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MedicamentDetailScreen(medicament: med),
                 ),
-              ],
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => MedicamentDetailScreen(medicament: med),
               ),
             ),
           ),
@@ -572,44 +581,46 @@ class _IndicationCardState extends State<IndicationCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.green.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.local_hospital, color: Colors.green, size: 20),
-            title: Text(
-              widget.indication.label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+    return RepaintBoundary(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.green.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.local_hospital, color: Colors.green, size: 20),
+              title: Text(
+                widget.indication.label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+              trailing: Icon(
+                isExpanded ? Icons.expand_less : Icons.expand_more,
                 color: Colors.green,
               ),
+              onTap: () {
+                setState(() {
+                  isExpanded = !isExpanded;
+                });
+              },
             ),
-            trailing: Icon(
-              isExpanded ? Icons.expand_less : Icons.expand_more,
-              color: Colors.green,
-            ),
-            onTap: () {
-              setState(() {
-                isExpanded = !isExpanded;
-              });
-            },
-          ),
-          if (isExpanded)
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                children: widget.indication.posologies.map((posologie) =>
-                    _buildPosologieCard(context, posologie)).toList(),
+            if (isExpanded)
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  children: widget.indication.posologies.map((posologie) =>
+                      _buildPosologieCard(context, posologie)).toList(),
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -619,7 +630,6 @@ class _IndicationCardState extends State<IndicationCard> {
       builder: (context, weightProvider, child) {
         final doseCalculee = posologie.calculerDose(weightProvider.weight);
         
-        // Calcul de la dose/kg pour affichage
         String doseParKg = '';
         if (posologie.doseKg != null) {
           doseParKg = '(${posologie.doseKg} ${posologie.unite}/kg)';

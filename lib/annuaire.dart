@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,12 +19,16 @@ class AnnuaireScreen extends StatefulWidget {
   State<AnnuaireScreen> createState() => _AnnuaireScreenState();
 }
 
-class _AnnuaireScreenState extends State<AnnuaireScreen> {
+class _AnnuaireScreenState extends State<AnnuaireScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   bool isInterne = true;
   Annuaire? annuaire;
   bool isLoading = true;
   final searchController = TextEditingController();
   List<Service> filteredServices = [];
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -34,16 +39,18 @@ class _AnnuaireScreenState extends State<AnnuaireScreen> {
   Future<void> _loadData() async {
     try {
       final data = await loadAnnuaire();
-      setState(() {
-        annuaire = data;
-        _updateFilteredServices();
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
       if (mounted) {
+        setState(() {
+          annuaire = data;
+          _updateFilteredServices();
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erreur de chargement: $e')),
         );
@@ -80,8 +87,15 @@ class _AnnuaireScreenState extends State<AnnuaireScreen> {
   }
 
   void _filterServices(String query) {
-    setState(() {
-      _updateFilteredServices();
+    // Debounce: attendre 300ms après la dernière frappe avant de filtrer
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _updateFilteredServices();
+        });
+      }
     });
   }
 
@@ -89,18 +103,20 @@ class _AnnuaireScreenState extends State<AnnuaireScreen> {
     setState(() {
       isInterne = interne;
       _updateFilteredServices();
-      // Force la fermeture de toutes les cartes en réinitialisant les keys
     });
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Important pour AutomaticKeepAliveClientMixin
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text("Annuaire"),
@@ -108,13 +124,8 @@ class _AnnuaireScreenState extends State<AnnuaireScreen> {
       ),
       body: Column(
         children: [
-          // Bandeau de sélection Interne/Externe
           _buildModeSelector(),
-          
-          // Barre de recherche
           _buildSearchBar(),
-          
-          // Liste des services
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -247,7 +258,10 @@ class _AnnuaireScreenState extends State<AnnuaireScreen> {
       itemCount: filteredServices.length,
       itemBuilder: (context, index) {
         final service = filteredServices[index];
-        return ServiceCard(service: service);
+        return ServiceCard(
+          key: ValueKey(service.nom),
+          service: service,
+        );
       },
     );
   }
@@ -267,65 +281,66 @@ class _ServiceCardState extends State<ServiceCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      elevation: 2,
-      child: Column(
-        children: [
-          ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.green.shade100,
-              child: Icon(
-                Icons.phone_in_talk,
-                color: Colors.green.shade700,
-              ),
-            ),
-            title: Text(
-              widget.service.nom,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            subtitle: widget.service.description != null
-                ? Text(
-                    widget.service.description!,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 13,
-                    ),
-                  )
-                : null,
-            trailing: Icon(
-              isExpanded ? Icons.expand_less : Icons.expand_more,
-              color: Colors.green.shade700,
-            ),
-            onTap: () {
-              setState(() {
-                isExpanded = !isExpanded;
-              });
-            },
-          ),
-          
-          // Contacts (affichés quand étendu)
-          if (isExpanded)
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                border: Border(
-                  top: BorderSide(color: Colors.grey.shade300),
+    return RepaintBoundary(
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        elevation: 2,
+        child: Column(
+          children: [
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.green.shade100,
+                child: Icon(
+                  Icons.phone_in_talk,
+                  color: Colors.green.shade700,
                 ),
               ),
-              child: Column(
-                children: widget.service.contacts.map((contact) {
-                  return ContactTile(
-                    contact: contact,
-                    key: ValueKey(contact.numero),
-                  );
-                }).toList(),
+              title: Text(
+                widget.service.nom,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
+              subtitle: widget.service.description != null
+                  ? Text(
+                      widget.service.description!,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
+                    )
+                  : null,
+              trailing: Icon(
+                isExpanded ? Icons.expand_less : Icons.expand_more,
+                color: Colors.green.shade700,
+              ),
+              onTap: () {
+                setState(() {
+                  isExpanded = !isExpanded;
+                });
+              },
             ),
-        ],
+            
+            if (isExpanded)
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  border: Border(
+                    top: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+                child: Column(
+                  children: widget.service.contacts.map((contact) {
+                    return ContactTile(
+                      contact: contact,
+                      key: ValueKey(contact.numero),
+                    );
+                  }).toList(),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -365,7 +380,6 @@ class ContactTile extends StatelessWidget {
   }
 
   Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
-    // Nettoyer le numéro (enlever espaces et autres caractères)
     final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
     final Uri launchUri = Uri(
       scheme: 'tel',
@@ -401,68 +415,70 @@ class ContactTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _getColorForType(contact.type);
     
-    return InkWell(
-      onTap: () => _makePhoneCall(context, contact.numero),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(8),
+    return RepaintBoundary(
+      child: InkWell(
+        onTap: () => _makePhoneCall(context, contact.numero),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  _getIconForType(contact.type),
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
-              child: Icon(
-                _getIconForType(contact.type),
-                color: Colors.white,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (contact.label != null)
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (contact.label != null)
+                      Text(
+                        contact.label!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     Text(
-                      contact.label!,
+                      contact.numero,
                       style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: color,
                       ),
                     ),
-                  Text(
-                    contact.numero,
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.call,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
-              child: const Icon(
-                Icons.call,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
