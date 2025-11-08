@@ -1,0 +1,628 @@
+{
+  "interne": [
+    {
+      "nom": "Postes de soins",
+      "contacts": [
+        {
+          "label": "Urgences",
+          "numero": "7 40 33",
+          "type": "fixe"
+        },
+        {
+          "label": "Pédiatrie A",
+          "numero": "7 44 58",
+          "type": "fixe"
+        },
+        {
+          "label": "Pédiatrie B",
+          "numero": "7 40 26",
+          "type": "fixe"
+        },
+        {
+          "label": "USC",
+          "numero": "7 42 06",
+          "type": "fixe"
+        },
+        {
+          "label": "Néonatalogie",
+          "numero": "7 42 20",
+          "type": "fixe"
+        },
+        {
+          "label": "HDJ",
+          "numero": "7 46 79",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Médecins",
+      "contacts": [
+        {
+          "label": "Philippe Labrune",
+          "numero": "7 41 53",
+          "type": "fixe"
+        },
+        {
+          "label": "Vincent Gajdos",
+          "numero": "20 502",
+          "type": "mobile"
+        },
+        {
+          "label": "Sébastien Wanior",
+          "numero": "20 422",
+          "type": "mobile"
+        },
+        {
+          "label": "Jeremy De Cas",
+          "numero": "20 893",
+          "type": "mobile"
+        },
+        {
+          "label": "Daphnée Lenauvergne",
+          "numero": "20 390",
+          "type": "mobile"
+        },
+        {
+          "label": "Lucie Garret",
+          "numero": "20 869",
+          "type": "mobile"
+        },
+        {
+          "label": "Dr Jamier",
+          "numero": "20 764",
+          "type": "mobile"
+        },
+        {
+          "label": "Pascale Trioche",
+          "numero": "7 40 93",
+          "type": "fixe"
+        },
+        {
+          "label": "Karen Milicent",
+          "numero": "20 753",
+          "type": "mobile"
+        },
+        {
+          "label": "Laure Olech",
+          "numero": "20 285",
+          "type": "mobile"
+        },
+        {
+          "label": "Souha Sleuth",
+          "numero": "7 42 71",
+          "type": "fixe"
+        },
+        {
+          "label": "Florence Raymond",
+          "numero": "7 41 74",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Consultations / CAMSP",
+      "description": "Consultations spécialisées et CAMSP",
+      "contacts": [
+        {
+          "label": "Consultations",
+          "numero": "7 42 73 / 20 458",
+          "type": "fixe"
+        },
+        {
+          "label": "CAMSP",
+          "numero": "7 80 28",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Urgences",
+      "contacts": [
+        {
+          "label": "Urgences Pédiatrie",
+          "numero": "7 47 39",
+          "type": "fixe"
+        },
+        {
+          "label": "Pool A (Marine)",
+          "numero": "7 41 54",
+          "type": "fixe"
+        },
+        {
+          "label": "Pool B / USC (Vanessa)",
+          "numero": "7 46 33",
+          "type": "fixe"
+        },
+        {
+          "label": "Nuit",
+          "numero": "20 950",
+          "type": "mobile"
+        },
+        {
+          "label": "Senior Urgences",
+          "numero": "7 46 11",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Psychologues",
+      "contacts": [
+        {
+          "label": "Caroline Perso",
+          "numero": "7 44 42",
+          "type": "fixe"
+        },
+        {
+          "label": "Anne Audebert",
+          "numero": "7 47 31",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Assistantes sociales",
+      "contacts": [
+        {
+          "label": "Noëlle Grassier",
+          "numero": "20 141",
+          "type": "mobile"
+        },
+        {
+          "label": "Marie Sibet",
+          "numero": "7 80 45",
+          "type": "fixe"
+        },
+        {
+          "label": "Interne NN",
+          "numero": "7 42 21e",
+          "type": "fixe"
+        },
+        {
+          "label": "Interne Urg 1",
+          "numero": "20 308",
+          "type": "mobile"
+        },
+        {
+          "label": "Interne Urg 2",
+          "numero": "7 40 05",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Diététiciennes",
+      "contacts": [
+        {
+          "label": "Valérie Guillemoreau",
+          "numero": "7 43 26",
+          "type": "fixe"
+        },
+        {
+          "label": "Aure Clélia Tallec-M",
+          "numero": "7 80 68",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Secrétariat",
+      "contacts": [
+        {
+          "label": "Crystal (S)",
+          "numero": "7 45 18",
+          "type": "fixe"
+        },
+        {
+          "label": "Vanessa (A)",
+          "numero": "7 44 40",
+          "type": "fixe"
+        },
+        {
+          "label": "Laetitia (HD)",
+          "numero": "7 45 64",
+          "type": "fixe"
+        },
+        {
+          "label": "Gwen (A)",
+          "numero": "7 45 42",
+          "type": "fixe"
+        },
+        {
+          "label": "Corinne (S)",
+          "numero": "7 44 42",
+          "type": "fixe"
+        },
+        {
+          "label": "Sylvie (Cs)",
+          "numero": "7 42 72",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Internes",
+      "contacts": [
+        {
+          "label": "Interne A",
+          "numero": "20 295",
+          "type": "mobile"
+        },
+        {
+          "label": "Interne B",
+          "numero": "20 296",
+          "type": "mobile"
+        }
+      ]
+    },
+    {
+      "nom": "Autres services",
+      "contacts": [
+        {
+          "label": "Anesthésiste",
+          "numero": "7 46 60",
+          "type": "fixe"
+        },
+        {
+          "label": "Psychiatre SAU",
+          "numero": "7 43 16",
+          "type": "fixe"
+        },
+        {
+          "label": "Réa Adulte",
+          "numero": "7 41 87",
+          "type": "fixe"
+        },
+        {
+          "label": "Réanimateur NN",
+          "numero": "7 41 25",
+          "type": "fixe"
+        },
+        {
+          "label": "PDS Réa NN",
+          "numero": "7 43 20",
+          "type": "fixe"
+        },
+        {
+          "label": "Senior Gynéco Obs",
+          "numero": "7 41 94",
+          "type": "fixe"
+        },
+        {
+          "label": "Réveil",
+          "numero": "20 280",
+          "type": "mobile"
+        }
+      ]
+    },
+    {
+      "nom": "Biologie",
+      "contacts": [
+        {
+          "label": "Hémato (P/garde)",
+          "numero": "7 41 36 / 20 493",
+          "type": "fixe"
+        },
+        {
+          "label": "Biochimie (P/garde)",
+          "numero": "20 307 / 20 177",
+          "type": "mobile"
+        },
+        {
+          "label": "EFS",
+          "numero": "7 41 50",
+          "type": "fixe"
+        },
+        {
+          "label": "Centre de tri",
+          "numero": "7 45 26",
+          "type": "fixe"
+        },
+        {
+          "label": "Bactério (P/garde)",
+          "numero": "20 304 / 7 41 36",
+          "type": "fixe"
+        },
+        {
+          "label": "Cytogénétique",
+          "numero": "7 40 81",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Imagerie",
+      "contacts": [
+        {
+          "label": "Radio garde",
+          "numero": "20 619",
+          "type": "mobile"
+        },
+        {
+          "label": "Rx / Manip",
+          "numero": "7 43 77",
+          "type": "fixe"
+        },
+        {
+          "label": "Échographie",
+          "numero": "20 024",
+          "type": "mobile"
+        },
+        {
+          "label": "Scanner",
+          "numero": "DS19/20921/20213",
+          "type": "fixe"
+        },
+        {
+          "label": "IRM",
+          "numero": "7 48 65 / 7 80 39",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Autres",
+      "contacts": [
+        {
+          "label": "Scintigraphie",
+          "numero": "7 46 39",
+          "type": "fixe"
+        },
+        {
+          "label": "EEG",
+          "numero": "20 273",
+          "type": "mobile"
+        },
+        {
+          "label": "Polyclinique",
+          "numero": "7 43 61",
+          "type": "fixe"
+        },
+        {
+          "label": "Cs Ophtalmo",
+          "numero": "7 47 91",
+          "type": "fixe"
+        },
+        {
+          "label": "Kiné",
+          "numero": "20 287",
+          "type": "mobile"
+        },
+        {
+          "label": "Orthophoniste (Laurène)",
+          "numero": "20 448",
+          "type": "mobile"
+        },
+        {
+          "label": "Pharmacie (P/garde)",
+          "numero": "7 41 56 / 7 48 88",
+          "type": "fixe"
+        },
+        {
+          "label": "Service informatique",
+          "numero": "*75",
+          "type": "fixe"
+        },
+        {
+          "label": "Salle de jeux",
+          "numero": "20 106",
+          "type": "mobile"
+        }
+      ]
+    }
+  ],
+  "externe": [
+    {
+      "nom": "Urgences vitales",
+      "description": "Numéros d'urgence",
+      "contacts": [
+        {
+          "label": "Urgence vitale adulte",
+          "numero": "7 81 78",
+          "type": "fixe"
+        },
+        {
+          "label": "SAMU",
+          "numero": "15",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "ORL BCT",
+      "description": "Service ORL Antoine-Béclère",
+      "contacts": [
+        {
+          "numero": "24 259",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Chirurgie Pédiatrique BCT",
+      "description": "Chirurgie pédiatrique Antoine-Béclère",
+      "contacts": [
+        {
+          "numero": "24 651",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Réa BCT et Alerte AVC",
+      "description": "Réanimation et alerte AVC",
+      "contacts": [
+        {
+          "numero": "17 225",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Centre anti poison",
+      "description": "Centre anti-poison",
+      "contacts": [
+        {
+          "numero": "24 711",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Hôpitaux BCT",
+      "description": "Hôpital Antoine-Béclère",
+      "contacts": [
+        {
+          "label": "Hôpitaux BCT",
+          "numero": "13 177",
+          "type": "fixe"
+        },
+        {
+          "label": "Neuro BCT",
+          "numero": "24 131",
+          "type": "fixe"
+        },
+        {
+          "label": "Rhumato BCT",
+          "numero": "24 646",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "ORL NEM",
+      "description": "ORL Necker",
+      "contacts": [
+        {
+          "numero": "01 44 49 55 78",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "SAU NEM (Ortho, Visc)",
+      "description": "SAU Necker",
+      "contacts": [
+        {
+          "numero": "01 44 49 42 91",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "EMI NEM",
+      "description": "EMI Necker",
+      "contacts": [
+        {
+          "numero": "06 71 95 84 48",
+          "type": "mobile"
+        }
+      ]
+    },
+    {
+      "nom": "Réa Cardio Necker",
+      "description": "Réanimation cardiologique Necker",
+      "contacts": [
+        {
+          "numero": "01 44 73 52 00",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Réa Cardio CCML",
+      "description": "Réanimation cardiologique CCML",
+      "contacts": [
+        {
+          "numero": "01 40 94 85 96",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Astreinte Cardio CCML",
+      "description": "Astreinte cardiologie CCML",
+      "contacts": [
+        {
+          "numero": "06 08 41 60 85",
+          "type": "mobile"
+        }
+      ]
+    },
+    {
+      "nom": "Centre anti poison Lille",
+      "description": "Centre anti-poison de Lille",
+      "contacts": [
+        {
+          "numero": "03 20 44 44 44",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Astreinte FOGD DP",
+      "description": "Astreinte FOGD",
+      "contacts": [
+        {
+          "numero": "01 45 74 33 99",
+          "type": "fixe"
+        },
+        {
+          "numero": "01 70 97 29 31",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Régulation SMUR Ped",
+      "description": "Régulation SMUR Pédiatrique",
+      "contacts": [
+        {
+          "numero": "01 44 49 24 17/16",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "SAMU",
+      "description": "SAMU 15",
+      "contacts": [
+        {
+          "numero": "15",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Transport",
+      "contacts": [
+        {
+          "label": "Logisticien",
+          "numero": "7 80 52",
+          "type": "fixe"
+        },
+        {
+          "label": "Brancardage",
+          "numero": "20 722",
+          "type": "mobile"
+        },
+        {
+          "label": "Sécurité",
+          "numero": "7 48 67",
+          "type": "fixe"
+        }
+      ]
+    },
+    {
+      "nom": "Fax",
+      "contacts": [
+        {
+          "label": "Fax service",
+          "numero": "01 45 37 40 20",
+          "type": "fax"
+        }
+      ]
+    }
+  ]
+}
