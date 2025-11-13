@@ -166,10 +166,17 @@ class Posologie {
 
   String calculerDose(double poids) {
     if (tranches != null && tranches!.isNotEmpty) {
-      final tranche = tranches!.firstWhere(
-        (t) => t.appliqueAPoids(poids),
-        orElse: () => tranches!.first,
-      );
+      // ✅ CORRECTIF : Gestion robuste des tranches uniques
+      TranchePosologie tranche;
+      try {
+        tranche = tranches!.firstWhere(
+          (t) => t.appliqueAPoids(poids),
+        );
+      } catch (e) {
+        // Si aucune correspondance, utiliser la première tranche
+        // (cas typique: tranche unique censée couvrir tous les poids)
+        tranche = tranches!.first;
+      }
       
       if (tranche.doses != null) {
         return tranche.doses!;
