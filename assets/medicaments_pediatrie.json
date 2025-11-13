@@ -1961,12 +1961,22 @@
         "posologies": [
           {
             "voie": "Inhalation",
-            "unite": "mL",
+            "unite": "mg",
             "tranches": [
               {
                 "poidsMin": 0.4,
+                "poidsMax": 10.0,
+                "doses": "4 à 6 L/min"
+              },
+              {
+                "poidsMin": 10.0,
+                "poidsMax": 30.0,
+                "doses": "6 à 9 L/min"
+              },
+              {
+                "poidsMin": 30.0,
                 "poidsMax": 50.0,
-                "doses": "6 à 15 L/min"
+                "doses": "9 à 12 L/min"
               }
             ]
           }
