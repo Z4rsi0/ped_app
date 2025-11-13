@@ -1962,5 +1962,44 @@
     "contreIndications": "A administrer seul. Nombreuses incompatibilités - Allergie œuf, soja. Utilisation prolongée (>48h) déconseillée chez enfant <16 ans",
     "surdosage": "Dépression cardiorespiratoire, hypotension, bradycardie. Syndrome perfusion propofol (rare, grave)",
     "aSavoir": "Émulsion lipidique: risque contamination bactérienne. Utilisation 6h après ouverture. Douleur à l'injection"
+  },
+  {
+    "nom": "Salbutamol",
+    "galenique": "Solution pour inhalation",
+    "nomCommercial": "VENTOLINE",
+    "indications": [
+      {
+        "label": "Asthme non grave",
+        "posologies": [
+          {
+            "voie": "Inhalation",
+            "unite": "gouttes",
+            "doseKg": 0.5,
+            "doseMax": 15.0
+          }
+        ]
+      },
+      {
+        "label": "Asthme grave",
+        "posologies": [
+          {
+            "voie": "Inhalation",
+            "unite": "mg",
+            "tranches": [
+              {
+                "poidsMin": 0.4,
+                "poidsMax": 14.9,
+                "doses": "2,5 mg toutes les 20 minutes pendant une heure"
+              },
+              {
+                "poidsMin": 15.0,
+                "poidsMax": 50.0,
+                "doses": "5 mg toutes les 20 minutes pendant une heure"
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 ]

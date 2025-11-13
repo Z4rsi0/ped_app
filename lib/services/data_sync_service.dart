@@ -58,7 +58,12 @@ class DataSyncService {
   /// Télécharge un fichier depuis GitHub
   static Future<bool> _downloadFile(String relativePath, String url) async {
     try {
-      final response = await http.get(Uri.parse(url)).timeout(
+
+      final uniqueUrl = Uri.parse(url).replace(
+        queryParameters: {'v': DateTime.now().millisecondsSinceEpoch.toString()},
+      );
+
+      final response = await http.get(uniqueUrl).timeout(
         const Duration(seconds: 10),
       );
 
