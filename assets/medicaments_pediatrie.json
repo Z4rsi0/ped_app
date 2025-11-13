@@ -1962,7 +1962,13 @@
           {
             "voie": "Inhalation",
             "unite": "mL",
-            "doses": "entre 6 et 15 L/min"
+            "tranches": [
+              {
+                "poidsMin": 0.4,
+                "poidsMax": 50.0,
+                "doses": "6 à 15 L/min"
+              }
+            ]
           }
         ]
       }
