@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'therapeutique.dart';
 import 'annuaire.dart';
 import 'protocoles.dart';
 import 'providers/weight_provider.dart';
 import 'services/data_sync_service.dart';
 
-void main() {
+Future<void> main() async {
+  // Charger le fichier .env (contient GITHUB_TOKEN)
+  try {
+    await dotenv.load(fileName: ".env");
+    debugPrint('✅ Fichier .env chargé');
+  } catch (e) {
+    debugPrint('⚠️ Fichier .env non trouvé (fonctionnement sans token)');
+  }
+  
   runApp(
     ChangeNotifierProvider(
       create: (_) => WeightProvider(),
@@ -65,6 +74,9 @@ class _SplashScreenState extends State<SplashScreen> {
           _hasError = true;
         });
         await Future.delayed(const Duration(seconds: 2));
+      } else {
+        setState(() => _status = result.message);
+        await Future.delayed(const Duration(seconds: 1));
       }
     } else {
       setState(() => _status = 'Mode hors ligne - Utilisation des données locales');

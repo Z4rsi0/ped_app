@@ -141,18 +141,6 @@
         ]
       },
       {
-        "label": "Choc septique",
-        "posologies": [
-          {
-            "voie": "IVSE",
-            "unite": "µg/kg/min",
-            "doseKgMin": 0.05,
-            "doseKgMax": 2,
-            "preparation": "Dilution G5% ou NaCl 0,9% - Voie centrale préférable si >0,3 µg/kg/min"
-          }
-        ]
-      },
-      {
         "label": "Bradycardie symptomatique",
         "posologies": [
           {
@@ -1962,6 +1950,23 @@
     "contreIndications": "A administrer seul. Nombreuses incompatibilités - Allergie œuf, soja. Utilisation prolongée (>48h) déconseillée chez enfant <16 ans",
     "surdosage": "Dépression cardiorespiratoire, hypotension, bradycardie. Syndrome perfusion propofol (rare, grave)",
     "aSavoir": "Émulsion lipidique: risque contamination bactérienne. Utilisation 6h après ouverture. Douleur à l'injection"
+  },
+  {
+    "nom": "Protoxyde D'azote",
+    "galenique": "Suspension pour inhalation",
+    "nomCommercial": "MEOPA",
+    "indications": [
+      {
+        "label": "Analgésie",
+        "posologies": [
+          {
+            "voie": "Inhalation",
+            "unite": "mL",
+            "doses": "entre 6 et 15 L/min"
+          }
+        ]
+      }
+    ]
   },
   {
     "nom": "Salbutamol",

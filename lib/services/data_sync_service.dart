@@ -1,40 +1,55 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Service de synchronisation des données depuis GitHub
 /// 
 /// Architecture:
-/// - GitHub: https://raw.githubusercontent.com/Z4rsi0/ped_app_data/main/assets/xxx.json
+/// - GitHub API: https://api.github.com/repos/Z4rsi0/ped_app_data/contents/assets/xxx.json
 /// - Local: /data/user/0/.../app_flutter/assets/xxx.json
 /// - Assets embarqués: assets/xxx.json (fallback)
+/// 
+/// Utilisation de l'API GitHub pour:
+/// - Éviter le cache CDN de raw.githubusercontent.com
+/// - Vérification conditionnelle via SHA
+/// - Téléchargement uniquement si fichier modifié
 class DataSyncService {
-  static const String githubBaseUrl = 'https://raw.githubusercontent.com/Z4rsi0/ped_app_data/main';
+  static const String githubApiBase = 'https://api.github.com/repos/Z4rsi0/ped_app_data/contents';
+  static const String githubOwner = 'Z4rsi0';
+  static const String githubRepo = 'ped_app_data';
+  static const String githubBranch = 'main';
   
   /// Liste des fichiers à synchroniser
   /// Clé = chemin relatif depuis la racine (avec assets/)
-  /// Valeur = URL GitHub complète
+  /// Valeur = chemin dans le repo GitHub
   static const Map<String, String> files = {
-    'assets/medicaments_pediatrie.json': '$githubBaseUrl/assets/medicaments_pediatrie.json',
-    'assets/annuaire.json': '$githubBaseUrl/assets/annuaire.json',
-    'assets/protocoles/etat_de_mal_epileptique.json': '$githubBaseUrl/assets/protocoles/etat_de_mal_epileptique.json',
-    'assets/protocoles/arret_cardio_respiratoire.json': '$githubBaseUrl/assets/protocoles/arret_cardio_respiratoire.json',
+    'assets/medicaments_pediatrie.json': 'assets/medicaments_pediatrie.json',
+    'assets/annuaire.json': 'assets/annuaire.json',
+    'assets/protocoles/etat_de_mal_epileptique.json': 'assets/protocoles/etat_de_mal_epileptique.json',
+    'assets/protocoles/arret_cardio_respiratoire.json': 'assets/protocoles/arret_cardio_respiratoire.json',
   };
 
   /// Synchronise tous les fichiers depuis GitHub
   static Future<SyncResult> syncAllData() async {
     int success = 0;
     int failed = 0;
+    int upToDate = 0;
     List<String> errors = [];
 
     for (var entry in files.entries) {
       try {
-        final downloaded = await _downloadFile(entry.key, entry.value);
-        if (downloaded) {
+        final result = await _downloadFile(entry.key, entry.value);
+        if (result == DownloadResult.success) {
           success++;
           debugPrint('✅ Synchronisé: ${entry.key}');
+        } else if (result == DownloadResult.upToDate) {
+          upToDate++;
+          debugPrint('⏭️ Déjà à jour: ${entry.key}');
         } else {
           failed++;
           errors.add(entry.key);
@@ -50,37 +65,93 @@ class DataSyncService {
     return SyncResult(
       success: success,
       failed: failed,
+      upToDate: upToDate,
       errors: errors,
       totalFiles: files.length,
     );
   }
 
-  /// Télécharge un fichier depuis GitHub
-  static Future<bool> _downloadFile(String relativePath, String url) async {
+  /// Télécharge un fichier depuis GitHub si nécessaire
+  /// Utilise l'API GitHub pour vérifier le SHA et éviter le cache CDN
+  static Future<DownloadResult> _downloadFile(String relativePath, String githubPath) async {
     try {
+      // 1. Récupérer le SHA local stocké
+      final prefs = await SharedPreferences.getInstance();
+      final shaKey = 'sha_$relativePath';
+      final localSha = prefs.getString(shaKey);
 
-      final uniqueUrl = Uri.parse(url).replace(
-        queryParameters: {'v': DateTime.now().millisecondsSinceEpoch.toString()},
-      );
-
-      final response = await http.get(uniqueUrl).timeout(
-        const Duration(seconds: 10),
-      );
-
-      if (response.statusCode == 200) {
-        final dir = await getApplicationDocumentsDirectory();
-        final file = File('${dir.path}/$relativePath');
-        
-        // Créer les sous-répertoires si nécessaire
-        await file.parent.create(recursive: true);
-        await file.writeAsString(response.body);
-        
-        return true;
+      // 2. Interroger l'API GitHub pour obtenir les métadonnées du fichier
+      final apiUrl = '$githubApiBase/$githubPath?ref=$githubBranch';
+      
+      // Préparer les headers avec le token si disponible
+      final headers = <String, String>{
+        'Accept': 'application/vnd.github.v3+json',
+      };
+      
+      // Utiliser le token GitHub depuis .env si disponible
+      final token = dotenv.env['GITHUB_TOKEN'];
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+        debugPrint('🔑 Utilisation du token GitHub (rate limit: 5000 req/h)');
       } else {
-        return false;
+        debugPrint('⚠️ Pas de token GitHub (rate limit: 60 req/h)');
       }
+      
+      final apiResponse = await http.get(
+        Uri.parse(apiUrl),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+
+      if (apiResponse.statusCode != 200) {
+        debugPrint('❌ API GitHub erreur ${apiResponse.statusCode} pour $githubPath');
+        return DownloadResult.failed;
+      }
+
+      final apiData = json.decode(apiResponse.body);
+      final remoteSha = apiData['sha'] as String?;
+      final downloadUrl = apiData['download_url'] as String?;
+
+      if (remoteSha == null || downloadUrl == null) {
+        debugPrint('❌ Données API incomplètes pour $githubPath');
+        return DownloadResult.failed;
+      }
+
+      // 3. Comparer les SHA - si identiques, ne pas télécharger
+      if (localSha == remoteSha) {
+        debugPrint('✓ Fichier déjà à jour (SHA: ${remoteSha.substring(0, 7)})');
+        return DownloadResult.upToDate;
+      }
+
+      // 4. Télécharger le contenu via download_url
+      debugPrint('⬇️ Téléchargement de $githubPath (SHA: ${remoteSha.substring(0, 7)})');
+      final contentResponse = await http.get(
+        Uri.parse(downloadUrl),
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      ).timeout(const Duration(seconds: 15));
+
+      if (contentResponse.statusCode != 200) {
+        debugPrint('❌ Téléchargement échoué: ${contentResponse.statusCode}');
+        return DownloadResult.failed;
+      }
+
+      // 5. Sauvegarder le fichier localement
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/$relativePath');
+      
+      await file.parent.create(recursive: true);
+      await file.writeAsString(contentResponse.body);
+
+      // 6. Stocker le nouveau SHA
+      await prefs.setString(shaKey, remoteSha);
+      
+      debugPrint('✅ Sauvegardé: ${file.path}');
+      return DownloadResult.success;
+
     } catch (e) {
-      return false;
+      debugPrint('❌ Exception _downloadFile: $e');
+      return DownloadResult.failed;
     }
   }
 
@@ -134,31 +205,42 @@ class DataSyncService {
     }
   }
 
-  /// Force le téléchargement d'un fichier spécifique
+  /// Force le téléchargement d'un fichier spécifique (ignore SHA)
   static Future<bool> forceDownloadFile(String assetPath) async {
     if (!assetPath.startsWith('assets/')) {
       assetPath = 'assets/$assetPath';
     }
     
-    final url = files[assetPath];
-    if (url == null) {
+    final githubPath = files[assetPath];
+    if (githubPath == null) {
       debugPrint('❌ URL non trouvée pour: $assetPath');
       return false;
     }
     
-    return await _downloadFile(assetPath, url);
+    // Supprimer le SHA local pour forcer le téléchargement
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('sha_$assetPath');
+    
+    final result = await _downloadFile(assetPath, githubPath);
+    return result == DownloadResult.success;
   }
 
   /// Supprime tous les fichiers locaux (reset aux assets embarqués)
   static Future<void> clearLocalData() async {
     try {
       final dir = await getApplicationDocumentsDirectory();
+      final prefs = await SharedPreferences.getInstance();
+      
       for (var assetPath in files.keys) {
+        // Supprimer le fichier
         final file = File('${dir.path}/$assetPath');
         if (await file.exists()) {
           await file.delete();
           debugPrint('🗑️ Supprimé: $assetPath');
         }
+        
+        // Supprimer le SHA
+        await prefs.remove('sha_$assetPath');
       }
     } catch (e) {
       debugPrint('❌ Erreur lors du nettoyage: $e');
@@ -178,26 +260,107 @@ class DataSyncService {
   }
 
   /// Obtient le statut de synchronisation de tous les fichiers
-  static Future<Map<String, bool>> getSyncStatus() async {
-    Map<String, bool> status = {};
+  static Future<Map<String, FileSyncStatus>> getSyncStatus() async {
+    Map<String, FileSyncStatus> status = {};
+    final prefs = await SharedPreferences.getInstance();
     
     for (var assetPath in files.keys) {
-      status[assetPath] = await fileExistsLocally(assetPath);
+      final exists = await fileExistsLocally(assetPath);
+      final sha = prefs.getString('sha_$assetPath');
+      
+      status[assetPath] = FileSyncStatus(
+        existsLocally: exists,
+        sha: sha,
+      );
     }
     
     return status;
   }
+
+  /// Obtient des informations détaillées sur un fichier
+  static Future<FileInfo?> getFileInfo(String assetPath) async {
+    if (!assetPath.startsWith('assets/')) {
+      assetPath = 'assets/$assetPath';
+    }
+    
+    final githubPath = files[assetPath];
+    if (githubPath == null) return null;
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localSha = prefs.getString('sha_$assetPath');
+      
+      final apiUrl = '$githubApiBase/$githubPath?ref=$githubBranch';
+      final apiResponse = await http.get(
+        Uri.parse(apiUrl),
+        headers: {'Accept': 'application/vnd.github.v3+json'},
+      ).timeout(const Duration(seconds: 10));
+
+      if (apiResponse.statusCode == 200) {
+        final apiData = json.decode(apiResponse.body);
+        return FileInfo(
+          path: assetPath,
+          remoteSha: apiData['sha'],
+          localSha: localSha,
+          size: apiData['size'],
+          isUpToDate: localSha == apiData['sha'],
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Erreur getFileInfo: $e');
+    }
+    
+    return null;
+  }
 }
 
+/// Résultat du téléchargement
+enum DownloadResult {
+  success,
+  upToDate,
+  failed,
+}
+
+/// Statut de synchronisation d'un fichier
+class FileSyncStatus {
+  final bool existsLocally;
+  final String? sha;
+
+  FileSyncStatus({
+    required this.existsLocally,
+    this.sha,
+  });
+}
+
+/// Informations détaillées sur un fichier
+class FileInfo {
+  final String path;
+  final String remoteSha;
+  final String? localSha;
+  final int size;
+  final bool isUpToDate;
+
+  FileInfo({
+    required this.path,
+    required this.remoteSha,
+    this.localSha,
+    required this.size,
+    required this.isUpToDate,
+  });
+}
+
+/// Résultat de la synchronisation globale
 class SyncResult {
   final int success;
   final int failed;
+  final int upToDate;
   final List<String> errors;
   final int totalFiles;
 
   SyncResult({
     required this.success,
     required this.failed,
+    required this.upToDate,
     required this.errors,
     required this.totalFiles,
   });
@@ -207,9 +370,14 @@ class SyncResult {
   
   String get message {
     if (allSuccess) {
-      return '✅ Tous les fichiers sont à jour ($success/$totalFiles)';
+      if (upToDate > 0 && success == 0) {
+        return '✅ Tous les fichiers sont déjà à jour ($upToDate/$totalFiles)';
+      } else if (success > 0) {
+        return '✅ $success fichier(s) mis à jour${upToDate > 0 ? ', $upToDate déjà à jour' : ''} ($totalFiles total)';
+      }
+      return '✅ Tous les fichiers sont à jour ($totalFiles/$totalFiles)';
     } else {
-      return '⚠️ $success/$totalFiles synchronisés - $failed erreur(s)';
+      return '⚠️ ${success + upToDate}/$totalFiles OK - $failed erreur(s)';
     }
   }
 

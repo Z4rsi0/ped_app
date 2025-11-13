@@ -43,3 +43,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Environment variables - NE PAS COMMIT
+.env
+.env.local
+.env.production
+
+# Fichiers de production
+
+/ios/
+/macos/
+/linux/
+/windows/
