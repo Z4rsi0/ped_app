@@ -95,13 +95,12 @@ class ReferenceMedicament {
   }
 }
 
+/// Charge la liste des protocoles disponibles depuis DataSyncService
 Future<List<String>> loadProtocolesList() async {
-  return [
-    'etat_de_mal_epileptique',
-    'arret_cardio_respiratoire',
-  ];
+  return await DataSyncService.listProtocoles();
 }
 
+/// Charge un protocole spécifique
 Future<Protocole> loadProtocole(String filename) async {
   final data = await DataSyncService.readFile('assets/protocoles/$filename.json');
   final jsonData = json.decode(data);
@@ -134,14 +133,18 @@ class _ProtocolesScreenState extends State<ProtocolesScreen> with AutomaticKeepA
     try {
       await MedicamentResolver().loadMedicaments();
       
+      // Charger la liste dynamique des protocoles
+      debugPrint('🔍 Chargement de la liste des protocoles...');
       final files = await loadProtocolesList();
+      debugPrint('📋 ${files.length} protocoles trouvés: $files');
+      
       Map<String, Protocole> loadedProtocoles = {};
       
       for (String file in files) {
         try {
           final protocole = await loadProtocole(file);
           loadedProtocoles[file] = protocole;
-          debugPrint('✅ Protocole chargé: $file');
+          debugPrint('✅ Protocole chargé: $file - ${protocole.nom}');
         } catch (e) {
           debugPrint('❌ Erreur chargement protocole $file: $e');
         }
@@ -174,6 +177,19 @@ class _ProtocolesScreenState extends State<ProtocolesScreen> with AutomaticKeepA
       appBar: AppBar(
         title: const Text("Protocoles"),
         backgroundColor: Colors.orange.shade100,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Rafraîchir les protocoles',
+            onPressed: () {
+              setState(() {
+                isLoading = true;
+                errorMessage = null;
+              });
+              _loadData();
+            },
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -241,6 +257,21 @@ class _ProtocolesScreenState extends State<ProtocolesScreen> with AutomaticKeepA
           Text(
             'Aucun protocole disponible',
             style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              setState(() {
+                isLoading = true;
+              });
+              _loadData();
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Rafraîchir'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
           ),
         ],
       ),

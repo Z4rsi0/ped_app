@@ -18,21 +18,79 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// - Éviter le cache CDN de raw.githubusercontent.com
 /// - Vérification conditionnelle via SHA
 /// - Téléchargement uniquement si fichier modifié
+/// - Découverte automatique des protocoles
 class DataSyncService {
   static const String githubApiBase = 'https://api.github.com/repos/Z4rsi0/ped_app_data/contents';
   static const String githubOwner = 'Z4rsi0';
   static const String githubRepo = 'ped_app_data';
   static const String githubBranch = 'main';
   
-  /// Liste des fichiers à synchroniser
+  /// Liste des fichiers de base à synchroniser (hors protocoles)
   /// Clé = chemin relatif depuis la racine (avec assets/)
   /// Valeur = chemin dans le repo GitHub
-  static const Map<String, String> files = {
+  static const Map<String, String> baseFiles = {
     'assets/medicaments_pediatrie.json': 'assets/medicaments_pediatrie.json',
     'assets/annuaire.json': 'assets/annuaire.json',
-    'assets/protocoles/etat_de_mal_epileptique.json': 'assets/protocoles/etat_de_mal_epileptique.json',
-    'assets/protocoles/arret_cardio_respiratoire.json': 'assets/protocoles/arret_cardio_respiratoire.json',
   };
+  
+  /// Cache des fichiers de protocoles découverts
+  static Map<String, String>? _protocolesCache;
+
+  /// Découvre tous les fichiers JSON dans le dossier protocoles
+  static Future<Map<String, String>> _discoverProtocoles() async {
+    if (_protocolesCache != null) {
+      debugPrint('📋 Utilisation du cache protocoles (${_protocolesCache!.length} fichiers)');
+      return _protocolesCache!;
+    }
+
+    try {
+      final apiUrl = '$githubApiBase/assets/protocoles?ref=$githubBranch';
+      
+      final headers = <String, String>{
+        'Accept': 'application/vnd.github.v3+json',
+      };
+      
+      final token = dotenv.env['GITHUB_TOKEN'];
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+      
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        debugPrint('❌ Erreur API GitHub: ${response.statusCode}');
+        return {};
+      }
+
+      final List<dynamic> contents = json.decode(response.body);
+      final Map<String, String> protocoles = {};
+      
+      for (var item in contents) {
+        if (item['type'] == 'file' && item['name'].toString().endsWith('.json')) {
+          final filename = item['name'] as String;
+          final path = 'assets/protocoles/$filename';
+          protocoles[path] = 'assets/protocoles/$filename';
+          debugPrint('📄 Protocole découvert: $filename');
+        }
+      }
+      
+      _protocolesCache = protocoles;
+      debugPrint('✅ ${protocoles.length} protocoles découverts');
+      return protocoles;
+    } catch (e) {
+      debugPrint('❌ Erreur découverte protocoles: $e');
+      return {};
+    }
+  }
+
+  /// Obtient la liste complète des fichiers (base + protocoles)
+  static Future<Map<String, String>> getAllFiles() async {
+    final protocoles = await _discoverProtocoles();
+    return {...baseFiles, ...protocoles};
+  }
 
   /// Synchronise tous les fichiers depuis GitHub
   static Future<SyncResult> syncAllData() async {
@@ -40,6 +98,10 @@ class DataSyncService {
     int failed = 0;
     int upToDate = 0;
     List<String> errors = [];
+
+    // Récupérer tous les fichiers (base + protocoles découverts)
+    final files = await getAllFiles();
+    debugPrint('🔄 Synchronisation de ${files.length} fichiers...');
 
     for (var entry in files.entries) {
       try {
@@ -211,6 +273,7 @@ class DataSyncService {
       assetPath = 'assets/$assetPath';
     }
     
+    final files = await getAllFiles();
     final githubPath = files[assetPath];
     if (githubPath == null) {
       debugPrint('❌ URL non trouvée pour: $assetPath');
@@ -231,6 +294,7 @@ class DataSyncService {
       final dir = await getApplicationDocumentsDirectory();
       final prefs = await SharedPreferences.getInstance();
       
+      final files = await getAllFiles();
       for (var assetPath in files.keys) {
         // Supprimer le fichier
         final file = File('${dir.path}/$assetPath');
@@ -242,6 +306,9 @@ class DataSyncService {
         // Supprimer le SHA
         await prefs.remove('sha_$assetPath');
       }
+      
+      // Vider le cache des protocoles
+      _protocolesCache = null;
     } catch (e) {
       debugPrint('❌ Erreur lors du nettoyage: $e');
     }
@@ -264,6 +331,7 @@ class DataSyncService {
     Map<String, FileSyncStatus> status = {};
     final prefs = await SharedPreferences.getInstance();
     
+    final files = await getAllFiles();
     for (var assetPath in files.keys) {
       final exists = await fileExistsLocally(assetPath);
       final sha = prefs.getString('sha_$assetPath');
@@ -283,6 +351,7 @@ class DataSyncService {
       assetPath = 'assets/$assetPath';
     }
     
+    final files = await getAllFiles();
     final githubPath = files[assetPath];
     if (githubPath == null) return null;
     
@@ -311,6 +380,15 @@ class DataSyncService {
     }
     
     return null;
+  }
+
+  /// Liste tous les protocoles disponibles
+  static Future<List<String>> listProtocoles() async {
+    final protocoles = await _discoverProtocoles();
+    return protocoles.keys
+        .where((path) => path.startsWith('assets/protocoles/'))
+        .map((path) => path.replaceAll('assets/protocoles/', '').replaceAll('.json', ''))
+        .toList();
   }
 }
 
