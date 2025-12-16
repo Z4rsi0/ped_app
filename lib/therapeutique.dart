@@ -164,17 +164,30 @@ class Posologie {
     return null;
   }
 
+  /// Détermine l'unité après calcul (retire /kg si présent)
+  /// Exemples: µg/kg/min → µg/min, mg/kg/h → mg/h, UI/kg/h → UI/h
+  String _getUniteCalculee() {
+    if (unite.contains('/kg/')) {
+      return unite.replaceFirst('/kg/', '/');
+    }
+    return unite;
+  }
+
+  /// Retourne l'unité d'origine pour l'affichage de la posologie de référence
+  String getUniteReference() {
+    return unite;
+  }
+
   String calculerDose(double poids) {
+    final uniteCalculee = _getUniteCalculee();
+    
     if (tranches != null && tranches!.isNotEmpty) {
-      // ✅ CORRECTIF : Gestion robuste des tranches uniques
       TranchePosologie tranche;
       try {
         tranche = tranches!.firstWhere(
           (t) => t.appliqueAPoids(poids),
         );
       } catch (e) {
-        // Si aucune correspondance, utiliser la première tranche
-        // (cas typique: tranche unique censée couvrir tous les poids)
         tranche = tranches!.first;
       }
       
@@ -185,34 +198,34 @@ class Posologie {
       if (tranche.doseKgMin != null && tranche.doseKgMax != null) {
         final doseMin = tranche.doseKgMin! * poids;
         final doseMax = tranche.doseKgMax! * poids;
-        return _formatDoseAvecUnite(doseMin, doseMax, unite);
+        return _formatDoseAvecUnite(doseMin, doseMax, uniteCalculee);
       } else if (tranche.doseKg != null) {
         final dose = tranche.doseKg! * poids;
-        return _formatDoseAvecUnite(dose, null, unite);
+        return _formatDoseAvecUnite(dose, null, uniteCalculee);
       }
     }
     
     if (doseKgMin != null && doseKgMax != null) {
-      final doseMin = doseKgMin! * poids;
-      final doseMax = doseKgMax! * poids;
+      final doseMinCalc = doseKgMin! * poids;
+      final doseMaxCalc = doseKgMax! * poids;
       
-      double? doseMaxDouble = _parseDouble(doseMax);
-      if (doseMaxDouble != null) {
-        final doseMinFinal = doseMin > doseMaxDouble ? doseMaxDouble : doseMin;
-        final doseMaxFinal = doseMax > doseMaxDouble ? doseMaxDouble : doseMax;
-        return '${_formatDoseAvecUnite(doseMinFinal, doseMaxFinal, unite)}\n(max ${_formatDoseMaximale(doseMax)})';
+      double? doseMaxAbsolue = _parseDouble(doseMax);
+      if (doseMaxAbsolue != null) {
+        final doseMinFinal = doseMinCalc > doseMaxAbsolue ? doseMaxAbsolue : doseMinCalc;
+        final doseMaxFinal = doseMaxCalc > doseMaxAbsolue ? doseMaxAbsolue : doseMaxCalc;
+        return '${_formatDoseAvecUnite(doseMinFinal, doseMaxFinal, uniteCalculee)}\n(max ${_formatDoseMaximale(doseMax)})';
       }
       
-      return _formatDoseAvecUnite(doseMin, doseMax, unite);
+      return _formatDoseAvecUnite(doseMinCalc, doseMaxCalc, uniteCalculee);
     } else if (doseKg != null) {
       final dose = doseKg! * poids;
       
-      double? doseMaxDouble = _parseDouble(doseMax);
-      if (doseMaxDouble != null && dose > doseMaxDouble) {
-        return '${_formatDoseAvecUnite(doseMaxDouble, null, unite)} (max atteint)';
+      double? doseMaxAbsolue = _parseDouble(doseMax);
+      if (doseMaxAbsolue != null && dose > doseMaxAbsolue) {
+        return '${_formatDoseAvecUnite(doseMaxAbsolue, null, uniteCalculee)} (max atteint)';
       }
       
-      return _formatDoseAvecUnite(dose, null, unite);
+      return _formatDoseAvecUnite(dose, null, uniteCalculee);
     }
     
     return "Dose non calculable";
@@ -221,37 +234,51 @@ class Posologie {
   String _formatDoseMaximale(dynamic doseMax) {
     if (doseMax == null) return '';
     if (doseMax is String) return doseMax;
-    if (doseMax is num) return '${doseMax.toStringAsFixed(0)} $unite';
+    if (doseMax is num) {
+      final uniteCalculee = _getUniteCalculee();
+      return '${doseMax.toStringAsFixed(0)} $uniteCalculee';
+    }
     return doseMax.toString();
   }
 
-  String _formatDoseAvecUnite(double dose1, double? dose2, String uniteOriginale) {
-    if (uniteOriginale == 'mg') {
+  String _formatDoseAvecUnite(double dose1, double? dose2, String uniteAffichage) {
+    // Extraire l'unité de base (avant le premier /)
+    String uniteBase = uniteAffichage.split('/').first;
+    String suffixe = uniteAffichage.contains('/') 
+        ? '/${uniteAffichage.split('/').skip(1).join('/')}' 
+        : '';
+    
+    // Conversion automatique des unités de base
+    if (uniteBase == 'mg') {
       if (dose1 < 0.1) {
+        // Convertir en µg
         if (dose2 != null) {
-          return '${(dose1 * 1000).toStringAsFixed(0)} - ${(dose2 * 1000).toStringAsFixed(0)} µg';
+          return '${(dose1 * 1000).toStringAsFixed(0)} - ${(dose2 * 1000).toStringAsFixed(0)} µg$suffixe';
         }
-        return '${(dose1 * 1000).toStringAsFixed(0)} µg';
+        return '${(dose1 * 1000).toStringAsFixed(0)} µg$suffixe';
       }
       if (dose1 >= 1000) {
+        // Convertir en g
         if (dose2 != null) {
-          return '${(dose1 / 1000).toStringAsFixed(1)} - ${(dose2 / 1000).toStringAsFixed(1)} g';
+          return '${(dose1 / 1000).toStringAsFixed(1)} - ${(dose2 / 1000).toStringAsFixed(1)} g$suffixe';
         }
-        return '${(dose1 / 1000).toStringAsFixed(1)} g';
+        return '${(dose1 / 1000).toStringAsFixed(1)} g$suffixe';
       }
-    } else if (uniteOriginale == 'µg') {
+    } else if (uniteBase == 'µg') {
       if (dose1 > 999) {
+        // Convertir en mg
         if (dose2 != null) {
-          return '${(dose1 / 1000).toStringAsFixed(1)} - ${(dose2 / 1000).toStringAsFixed(1)} mg';
+          return '${(dose1 / 1000).toStringAsFixed(1)} - ${(dose2 / 1000).toStringAsFixed(1)} mg$suffixe';
         }
-        return '${(dose1 / 1000).toStringAsFixed(1)} mg';
+        return '${(dose1 / 1000).toStringAsFixed(1)} mg$suffixe';
       }
     }
     
+    // Pas de conversion nécessaire
     if (dose2 != null) {
-      return '${dose1.toStringAsFixed(1)} - ${dose2.toStringAsFixed(1)} $uniteOriginale';
+      return '${dose1.toStringAsFixed(1)} - ${dose2.toStringAsFixed(1)} $uniteAffichage';
     }
-    return '${dose1.toStringAsFixed(1)} $uniteOriginale';
+    return '${dose1.toStringAsFixed(1)} $uniteAffichage';
   }
 }
 
@@ -310,7 +337,6 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> with Automati
   }
 
   void _filterMedicaments(String query) {
-    // Debounce: attendre 300ms après la dernière frappe avant de filtrer
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     
     _debounce = Timer(const Duration(milliseconds: 300), () {
@@ -338,7 +364,7 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> with Automati
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Important pour AutomaticKeepAliveClientMixin
+    super.build(context);
     
     return Scaffold(
       body: Column(
@@ -637,11 +663,13 @@ class _IndicationCardState extends State<IndicationCard> {
       builder: (context, weightProvider, child) {
         final doseCalculee = posologie.calculerDose(weightProvider.weight);
         
+        // Afficher la posologie de référence avec l'unité d'origine (non calculée)
         String doseParKg = '';
+        final uniteRef = posologie.getUniteReference();
         if (posologie.doseKg != null) {
-          doseParKg = '(${posologie.doseKg} ${posologie.unite}/kg)';
+          doseParKg = '(${posologie.doseKg} $uniteRef)';
         } else if (posologie.doseKgMin != null && posologie.doseKgMax != null) {
-          doseParKg = '(${posologie.doseKgMin} - ${posologie.doseKgMax} ${posologie.unite}/kg)';
+          doseParKg = '(${posologie.doseKgMin} - ${posologie.doseKgMax} $uniteRef)';
         }
         
         return Container(

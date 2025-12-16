@@ -203,7 +203,18 @@ class PosologieData {
     );
   }
 
+  /// Détermine l'unité après calcul (retire /kg si présent)
+  /// Exemples: µg/kg/min → µg/min, mg/kg/h → mg/h, UI/kg/h → UI/h
+  String _getUniteCalculee() {
+    if (unite.contains('/kg/')) {
+      return unite.replaceFirst('/kg/', '/');
+    }
+    return unite;
+  }
+
   String calculerDose(double poids) {
+    final uniteCalculee = _getUniteCalculee();
+    
     if (tranches != null && tranches!.isNotEmpty) {
       final tranche = tranches!.firstWhere(
         (t) => t.appliqueAPoids(poids),
@@ -213,58 +224,65 @@ class PosologieData {
       if (tranche.doseKgMin != null && tranche.doseKgMax != null) {
         final doseMin = tranche.doseKgMin! * poids;
         final doseMax = tranche.doseKgMax! * poids;
-        return _formatDoseAvecUnite(doseMin, doseMax, unite);
+        return _formatDoseAvecUnite(doseMin, doseMax, uniteCalculee);
       } else {
         final dose = tranche.doseKg * poids;
-        return _formatDoseAvecUnite(dose, null, unite);
+        return _formatDoseAvecUnite(dose, null, uniteCalculee);
       }
     }
     
     if (doseKgMin != null && doseKgMax != null) {
       final doseMin = doseKgMin! * poids;
-      final doseMax = doseKgMax! * poids;
+      final doseMaxCalc = doseKgMax! * poids;
       
-      // ignore: unnecessary_null_comparison
       if (doseMax != null) {
-        final doseMinFinal = doseMin > doseMax ? doseMax : doseMin;
-        final doseMaxFinal = doseMax > doseMax ? doseMax : doseMax;
-        // ignore: unnecessary_brace_in_string_interps
-        return '${_formatDoseAvecUnite(doseMinFinal, doseMaxFinal, unite)} (max ${doseMax} $unite)';
+        final doseMinFinal = doseMin > doseMax! ? doseMax! : doseMin;
+        final doseMaxFinal = doseMaxCalc > doseMax! ? doseMax! : doseMaxCalc;
+        return '${_formatDoseAvecUnite(doseMinFinal, doseMaxFinal, uniteCalculee)} (max ${doseMax} $uniteCalculee)';
       }
       
-      // ignore: dead_code
-      return _formatDoseAvecUnite(doseMin, doseMax, unite);
+      return _formatDoseAvecUnite(doseMin, doseMaxCalc, uniteCalculee);
     } else {
       final dose = doseKg! * poids;
       
       if (doseMax != null && dose > doseMax!) {
-        return '${_formatDoseAvecUnite(doseMax!, null, unite)} (max atteint)';
+        return '${_formatDoseAvecUnite(doseMax!, null, uniteCalculee)} (max atteint)';
       }
       
-      return _formatDoseAvecUnite(dose, null, unite);
+      return _formatDoseAvecUnite(dose, null, uniteCalculee);
     }
   }
 
-  String _formatDoseAvecUnite(double dose1, double? dose2, String uniteOriginale) {
-    if (uniteOriginale == 'mg') {
+  String _formatDoseAvecUnite(double dose1, double? dose2, String uniteAffichage) {
+    // Extraire l'unité de base (avant le premier /)
+    String uniteBase = uniteAffichage.split('/').first;
+    String suffixe = uniteAffichage.contains('/') 
+        ? '/${uniteAffichage.split('/').skip(1).join('/')}' 
+        : '';
+    
+    // Conversion automatique des unités de base
+    if (uniteBase == 'mg') {
       if (dose1 < 0.1) {
+        // Convertir en µg
         if (dose2 != null) {
-          return '${(dose1 * 1000).toStringAsFixed(0)} - ${(dose2 * 1000).toStringAsFixed(0)} µg';
+          return '${(dose1 * 1000).toStringAsFixed(0)} - ${(dose2 * 1000).toStringAsFixed(0)} µg$suffixe';
         }
-        return '${(dose1 * 1000).toStringAsFixed(0)} µg';
+        return '${(dose1 * 1000).toStringAsFixed(0)} µg$suffixe';
       }
-    } else if (uniteOriginale == 'µg') {
+    } else if (uniteBase == 'µg') {
       if (dose1 > 999) {
+        // Convertir en mg
         if (dose2 != null) {
-          return '${(dose1 / 1000).toStringAsFixed(1)} - ${(dose2 / 1000).toStringAsFixed(1)} mg';
+          return '${(dose1 / 1000).toStringAsFixed(1)} - ${(dose2 / 1000).toStringAsFixed(1)} mg$suffixe';
         }
-        return '${(dose1 / 1000).toStringAsFixed(1)} mg';
+        return '${(dose1 / 1000).toStringAsFixed(1)} mg$suffixe';
       }
     }
     
+    // Pas de conversion nécessaire
     if (dose2 != null) {
-      return '${dose1.toStringAsFixed(1)} - ${dose2.toStringAsFixed(1)} $uniteOriginale';
+      return '${dose1.toStringAsFixed(1)} - ${dose2.toStringAsFixed(1)} $uniteAffichage';
     }
-    return '${dose1.toStringAsFixed(1)} $uniteOriginale';
+    return '${dose1.toStringAsFixed(1)} $uniteAffichage';
   }
 }
