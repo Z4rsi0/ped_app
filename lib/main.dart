@@ -3,11 +3,15 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'therapeutique.dart';
 import 'annuaire.dart';
-import 'protocoles.dart';
+import 'screens/protocoles_screen.dart';
 import 'providers/weight_provider.dart';
 import 'services/data_sync_service.dart';
+import 'services/medicament_resolver.dart';
+import 'services/protocol_service.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   // Charger le fichier .env (contient GITHUB_TOKEN)
   try {
     await dotenv.load(fileName: ".env");
@@ -15,7 +19,7 @@ Future<void> main() async {
   } catch (e) {
     debugPrint('⚠️ Fichier .env non trouvé (fonctionnement sans token)');
   }
-  
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => WeightProvider(),
@@ -67,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen> {
       // Synchroniser les données
       setState(() => _status = 'Mise à jour des données...');
       final result = await DataSyncService.syncAllData();
-      
+
       if (result.hasErrors) {
         setState(() {
           _status = result.message;
@@ -79,8 +83,25 @@ class _SplashScreenState extends State<SplashScreen> {
         await Future.delayed(const Duration(seconds: 1));
       }
     } else {
-      setState(() => _status = 'Mode hors ligne - Utilisation des données locales');
+      setState(
+          () => _status = 'Mode hors ligne - Utilisation des données locales');
       await Future.delayed(const Duration(seconds: 1));
+    }
+
+    // Précharger les médicaments pour le resolver
+    setState(() => _status = 'Chargement des médicaments...');
+    try {
+      await MedicamentResolver().loadMedicaments();
+    } catch (e) {
+      debugPrint('⚠️ Erreur préchargement médicaments: $e');
+    }
+
+    // Charger les protocoles
+    setState(() => _status = 'Chargement des protocoles...');
+    try {
+      await ProtocolService().loadProtocols();
+    } catch (e) {
+      debugPrint('⚠️ Erreur préchargement protocoles: $e');
     }
 
     // Navigation vers l'écran principal
@@ -106,7 +127,7 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 Icons.medical_services,
                 size: 80,
                 color: Colors.white,
@@ -183,11 +204,16 @@ class _MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         title: Text(_titles[_selectedIndex]),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: _selectedIndex == 2 ? null : const [
-          GlobalWeightSelector(),
-        ],
+        actions: _selectedIndex == 2
+            ? null
+            : const [
+                GlobalWeightSelector(),
+              ],
       ),
-      body: _pages[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
@@ -197,15 +223,18 @@ class _MainScreenState extends State<MainScreen> {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.medication),
+            icon: Icon(Icons.medication_outlined),
+            selectedIcon: Icon(Icons.medication),
             label: 'Thérapeutique',
           ),
           NavigationDestination(
-            icon: Icon(Icons.description),
+            icon: Icon(Icons.description_outlined),
+            selectedIcon: Icon(Icons.description),
             label: 'Protocoles',
           ),
           NavigationDestination(
-            icon: Icon(Icons.contacts),
+            icon: Icon(Icons.contacts_outlined),
+            selectedIcon: Icon(Icons.contacts),
             label: 'Annuaire',
           ),
         ],
@@ -214,253 +243,153 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
+/// Widget global pour sélectionner le poids (version compacte pour l'AppBar)
 class GlobalWeightSelector extends StatelessWidget {
   const GlobalWeightSelector({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<WeightProvider>(
-      builder: (context, weightProvider, child) {
-        return Container(
-          margin: const EdgeInsets.only(right: 16),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.monitor_weight, size: 20),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () => _showWeightDialog(context, weightProvider),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.shade200, width: 2),
-                  ),
-                  child: Text(
-                    weightProvider.weight < 1
-                      ? '${(weightProvider.weight * 1000).toStringAsFixed(0)} g'
-                      : '${weightProvider.weight.toStringAsFixed(weightProvider.weight < 10 ? 1 : 0)} kg',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Colors.blue,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+      builder: (context, weightProvider, _) {
+        return Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: TextButton.icon(
+            onPressed: () => _showWeightDialog(context, weightProvider),
+            icon: const Icon(Icons.monitor_weight, size: 18),
+            label: Text(
+              weightProvider.weight != null
+                  ? '${weightProvider.formattedWeight} kg'
+                  : 'Poids',
+              style: const TextStyle(fontSize: 14),
+            ),
           ),
         );
       },
     );
   }
 
-  void _showWeightDialog(BuildContext context, WeightProvider weightProvider) {
-    double tempWeight = weightProvider.weight;
+  void _showWeightDialog(BuildContext context, WeightProvider provider) {
+    double tempWeight = provider.weight ?? 10.0;
     
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.monitor_weight, color: Colors.blue),
-              SizedBox(width: 8),
-              Text('Poids de l\'enfant'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                tempWeight < 1 
-                  ? '${(tempWeight * 1000).toStringAsFixed(0)} g'
-                  : '${tempWeight.toStringAsFixed(tempWeight < 10 ? 1 : 0)} kg',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Sélection du poids'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${tempWeight.toStringAsFixed(tempWeight < 10 ? 1 : 0)} kg',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Column(
-                children: [
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 4.0,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12.0),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 24.0),
-                    ),
-                    child: Slider(
-                      value: weightProvider.weightToSliderValue(tempWeight),
-                      min: 0,
-                      max: WeightProvider.totalPositions.toDouble(),
-                      divisions: WeightProvider.totalPositions,
-                      activeColor: Colors.blue.shade600,
-                      onChanged: (val) {
-                        setState(() {
-                          tempWeight = weightProvider.sliderValueToWeight(val);
+                const SizedBox(height: 16),
+                Slider(
+                  value: tempWeight,
+                  min: 0.4,
+                  max: 100.0,
+                  divisions: 996,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      // Arrondir selon les tranches
+                      if (value < 10) {
+                        tempWeight = (value * 10).round() / 10; // 0.1 kg
+                      } else {
+                        tempWeight = value.roundToDouble(); // 1 kg
+                      }
+                    });
+                  },
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _QuickWeightButton(
+                      label: '-1',
+                      onPressed: () {
+                        setDialogState(() {
+                          tempWeight = (tempWeight - 1).clamp(0.4, 100.0);
                         });
                       },
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('400 g', style: TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w500)),
-                        Text('4 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10)),
-                        Text('7 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w600)),
-                        Text('10 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10)),
-                        Text('50 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w500)),
-                      ],
+                    _QuickWeightButton(
+                      label: '-0.1',
+                      onPressed: () {
+                        setDialogState(() {
+                          tempWeight = ((tempWeight - 0.1) * 10).round() / 10;
+                          tempWeight = tempWeight.clamp(0.4, 100.0);
+                        });
+                      },
                     ),
-                  ),
-                ],
+                    _QuickWeightButton(
+                      label: '+0.1',
+                      onPressed: () {
+                        setDialogState(() {
+                          tempWeight = ((tempWeight + 0.1) * 10).round() / 10;
+                          tempWeight = tempWeight.clamp(0.4, 100.0);
+                        });
+                      },
+                    ),
+                    _QuickWeightButton(
+                      label: '+1',
+                      onPressed: () {
+                        setDialogState(() {
+                          tempWeight = (tempWeight + 1).clamp(0.4, 100.0);
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  provider.clearWeight();
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Effacer'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Annuler'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  provider.setWeight(tempWeight);
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Valider'),
               ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                weightProvider.setWeight(tempWeight);
-                Navigator.pop(context);
-              },
-              child: const Text('Valider'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 }
 
-class GlobalWeightSelectorCompact extends StatelessWidget {
-  const GlobalWeightSelectorCompact({super.key});
+class _QuickWeightButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+
+  const _QuickWeightButton({
+    required this.label,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<WeightProvider>(
-      builder: (context, weightProvider, child) {
-        return GestureDetector(
-          onTap: () => _showWeightDialog(context, weightProvider),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.monitor_weight, size: 18),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.blue.shade200, width: 2),
-                ),
-                child: Text(
-                  weightProvider.weight < 1
-                    ? '${(weightProvider.weight * 1000).toStringAsFixed(0)} g'
-                    : '${weightProvider.weight.toStringAsFixed(weightProvider.weight < 10 ? 1 : 0)} kg',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: Colors.blue,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showWeightDialog(BuildContext context, WeightProvider weightProvider) {
-    double tempWeight = weightProvider.weight;
-    
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.monitor_weight, color: Colors.blue),
-              SizedBox(width: 8),
-              Text('Poids de l\'enfant'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                tempWeight < 1 
-                  ? '${(tempWeight * 1000).toStringAsFixed(0)} g'
-                  : '${tempWeight.toStringAsFixed(tempWeight < 10 ? 1 : 0)} kg',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Column(
-                children: [
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 4.0,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12.0),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 24.0),
-                    ),
-                    child: Slider(
-                      value: weightProvider.weightToSliderValue(tempWeight),
-                      min: 0,
-                      max: WeightProvider.totalPositions.toDouble(),
-                      divisions: WeightProvider.totalPositions,
-                      activeColor: Colors.blue.shade600,
-                      onChanged: (val) {
-                        setState(() {
-                          tempWeight = weightProvider.sliderValueToWeight(val);
-                        });
-                      },
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('400 g', style: TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w500)),
-                        Text('4 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10)),
-                        Text('7 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w600)),
-                        Text('10 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10)),
-                        Text('50 kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                weightProvider.setWeight(tempWeight);
-                Navigator.pop(context);
-              },
-              child: const Text('Valider'),
-            ),
-          ],
-        ),
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        minimumSize: Size.zero,
       ),
+      child: Text(label),
     );
   }
 }

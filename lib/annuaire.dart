@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'models/annuaire_model.dart'; 
+import 'models/annuaire_model.dart';
 import 'services/data_sync_service.dart';
 
 // Chargement de l'annuaire depuis le JSON
@@ -19,7 +19,8 @@ class AnnuaireScreen extends StatefulWidget {
   State<AnnuaireScreen> createState() => _AnnuaireScreenState();
 }
 
-class _AnnuaireScreenState extends State<AnnuaireScreen> with AutomaticKeepAliveClientMixin {
+class _AnnuaireScreenState extends State<AnnuaireScreen>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
@@ -60,9 +61,9 @@ class _AnnuaireScreenState extends State<AnnuaireScreen> with AutomaticKeepAlive
 
   void _updateFilteredServices() {
     if (annuaire == null) return;
-    
+
     List<Service> services = isInterne ? annuaire!.interne : annuaire!.externe;
-    
+
     if (searchController.text.isEmpty) {
       filteredServices = services;
     } else {
@@ -70,17 +71,17 @@ class _AnnuaireScreenState extends State<AnnuaireScreen> with AutomaticKeepAlive
       filteredServices = services.where((s) {
         // Recherche dans le nom du service
         if (s.nom.toLowerCase().contains(query)) return true;
-        
+
         // Recherche dans la description du service
         if (s.description?.toLowerCase().contains(query) ?? false) return true;
-        
+
         // Recherche dans les labels des contacts
         for (var contact in s.contacts) {
           if (contact.label?.toLowerCase().contains(query) ?? false) {
             return true;
           }
         }
-        
+
         return false;
       }).toList();
     }
@@ -89,7 +90,7 @@ class _AnnuaireScreenState extends State<AnnuaireScreen> with AutomaticKeepAlive
   void _filterServices(String query) {
     // Debounce: attendre 300ms après la dernière frappe avant de filtrer
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    
+
     _debounce = Timer(const Duration(milliseconds: 300), () {
       if (mounted) {
         setState(() {
@@ -116,7 +117,7 @@ class _AnnuaireScreenState extends State<AnnuaireScreen> with AutomaticKeepAlive
   @override
   Widget build(BuildContext context) {
     super.build(context); // Important pour AutomaticKeepAliveClientMixin
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Annuaire"),
@@ -321,7 +322,6 @@ class _ServiceCardState extends State<ServiceCard> {
                 });
               },
             ),
-            
             if (isExpanded)
               Container(
                 decoration: BoxDecoration(
@@ -379,21 +379,58 @@ class ContactTile extends StatelessWidget {
     }
   }
 
-  Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
+  /// Vérifie si le numéro est un numéro à 10 chiffres (format téléphone standard)
+  bool _isFullPhoneNumber(String phoneNumber) {
+    // Nettoyer le numéro (garder uniquement les chiffres et le +)
     final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
-    final Uri launchUri = Uri(
-      scheme: 'tel',
-      path: cleanNumber,
-    );
     
+    // Vérifier si c'est un numéro à 10 chiffres ou plus (format français standard)
+    // ou un numéro avec préfixe international
+    if (cleanNumber.startsWith('+')) {
+      return cleanNumber.length >= 11; // +33 6 xx xx xx xx = 12 chiffres
+    }
+    return cleanNumber.length >= 10;
+  }
+
+  /// Formate le numéro pour l'appel
+  String _formatPhoneNumberForCall(String phoneNumber) {
+    // Nettoyer le numéro
+    String cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    
+    // Si le numéro commence par 0 et fait 10 chiffres, c'est un numéro français
+    if (cleanNumber.startsWith('0') && cleanNumber.length == 10) {
+      return cleanNumber;
+    }
+    
+    // Si le numéro commence par +, le garder tel quel
+    if (cleanNumber.startsWith('+')) {
+      return cleanNumber;
+    }
+    
+    // Sinon, ajouter le préfixe français
+    if (cleanNumber.length == 10) {
+      return cleanNumber;
+    }
+    
+    return cleanNumber;
+  }
+
+  /// Lance l'application téléphone avec le numéro (sans appeler directement)
+  Future<void> _dialPhoneNumber(BuildContext context, String phoneNumber) async {
+    final formattedNumber = _formatPhoneNumberForCall(phoneNumber);
+    final Uri dialUri = Uri(
+      scheme: 'tel',
+      path: formattedNumber,
+    );
+
     try {
-      if (await canLaunchUrl(launchUri)) {
-        await launchUrl(launchUri);
+      if (await canLaunchUrl(dialUri)) {
+        await launchUrl(dialUri);
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Impossible de passer l\'appel'),
+              content: Text('Impossible d\'ouvrir le composeur téléphonique'),
               backgroundColor: Colors.red,
             ),
           );
@@ -411,20 +448,45 @@ class ContactTile extends StatelessWidget {
     }
   }
 
+  /// Copie le numéro dans le presse-papier (pour les numéros internes courts)
+  Future<void> _copyToClipboard(BuildContext context, String number) async {
+    // Utiliser le package clipboard ou montrer une snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Numéro interne: $number'),
+        backgroundColor: Colors.blue,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'OK',
+          textColor: Colors.white,
+          onPressed: () {},
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = _getColorForType(contact.type);
-    
+    final isDialable = _isFullPhoneNumber(contact.numero);
+
     return RepaintBoundary(
       child: InkWell(
-        onTap: () => _makePhoneCall(context, contact.numero),
+        onTap: () {
+          if (isDialable) {
+            _dialPhoneNumber(context, contact.numero);
+          } else {
+            _copyToClipboard(context, contact.numero);
+          }
+        },
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+            border:
+                Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
           ),
           child: Row(
             children: [
@@ -462,17 +524,26 @@ class ContactTile extends StatelessWidget {
                         color: color,
                       ),
                     ),
+                    if (!isDialable)
+                      Text(
+                        'Numéro interne',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey.shade500,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
                   ],
                 ),
               ),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color,
+                  color: isDialable ? color : Colors.grey.shade400,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.call,
+                child: Icon(
+                  isDialable ? Icons.call : Icons.content_copy,
                   color: Colors.white,
                   size: 20,
                 ),
