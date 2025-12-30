@@ -58,4 +58,4 @@ app.*.map.json
 
 #Fichiers medication_editor
 
-/assets/
+/assets/medicaments_pediatrie.json
