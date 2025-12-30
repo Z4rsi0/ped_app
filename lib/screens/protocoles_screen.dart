@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/protocol_model.dart';
 import '../services/protocol_service.dart';
 import '../widgets/protocol_block_widgets.dart';
-import 'main.dart';
+import '../widgets/global_weight_selector.dart';
 
 class ProtocolesScreen extends StatefulWidget {
   const ProtocolesScreen({super.key});

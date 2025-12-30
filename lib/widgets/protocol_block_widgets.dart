@@ -373,13 +373,15 @@ class MedicamentBlockWidget extends StatelessWidget {
         final resolver = MedicamentResolver();
         PosologieResolue? posologie;
         String? errorMessage;
+        
+        final poids = weightProvider.weight ?? 10.0;
 
         try {
           posologie = resolver.resolveMedicament(
             nomMedicament: block.nomMedicament,
             indication: block.indication,
             voie: block.voie,
-            poids: weightProvider.weight,
+            poids: poids,
           );
         } catch (e) {
           errorMessage = e.toString();

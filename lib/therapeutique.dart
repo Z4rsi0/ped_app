@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/weight_provider.dart';
-import 'main.dart';
+import 'widgets/global_weight_selector.dart';
 import 'services/data_sync_service.dart';
 
 // Modèle simplifié de médicament
@@ -661,7 +661,8 @@ class _IndicationCardState extends State<IndicationCard> {
   Widget _buildPosologieCard(BuildContext context, Posologie posologie) {
     return Consumer<WeightProvider>(
       builder: (context, weightProvider, child) {
-        final doseCalculee = posologie.calculerDose(weightProvider.weight);
+        final poids = weightProvider.weight ?? 10.0;
+        final doseCalculee = posologie.calculerDose(poids);
         
         // Afficher la posologie de référence avec l'unité d'origine (non calculée)
         String doseParKg = '';

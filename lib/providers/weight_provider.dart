@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class WeightProvider extends ChangeNotifier {
-  double _weight = 10.0;
+  double? _weight = 10.0;
 
   // Constantes de plage
   static const double minWeight = 0.4;  // 400g
@@ -17,15 +17,39 @@ class WeightProvider extends ChangeNotifier {
   static const int positionsLarge = 40;  // (50 - 10) / 1 = 40
   static const int totalPositions = 136; // 96 + 40
 
-  double get weight => _weight;
+  /// Poids actuel (nullable)
+  double? get weight => _weight;
 
-  void setWeight(double newWeight) {
+  /// Poids formaté pour l'affichage
+  String get formattedWeight {
+    if (_weight == null) return '';
+    if (_weight! < 10) {
+      return _weight!.toStringAsFixed(1);
+    }
+    return _weight!.toStringAsFixed(0);
+  }
+
+  /// Définit le poids (peut être null pour effacer)
+  void setWeight(double? newWeight) {
+    if (newWeight == null) {
+      _weight = null;
+      notifyListeners();
+      return;
+    }
+    
     if (newWeight >= minWeight && newWeight <= maxWeight) {
-      // ✅ OPTIMISATION: Ne notifier que si changement réel
       if (_weight != newWeight) {
         _weight = newWeight;
         notifyListeners();
       }
+    }
+  }
+
+  /// Efface le poids (le met à null)
+  void clearWeight() {
+    if (_weight != null) {
+      _weight = null;
+      notifyListeners();
     }
   }
 
