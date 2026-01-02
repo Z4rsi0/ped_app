@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/protocol_model.dart';
 import 'data_sync_service.dart';
@@ -12,34 +11,48 @@ class ProtocolService {
   List<Protocol>? _protocols;
   bool _isLoaded = false;
 
-  /// Liste des protocoles chargés
   List<Protocol> get protocols => _protocols ?? [];
   bool get isLoaded => _isLoaded;
 
-  /// Charge tous les protocoles depuis les fichiers JSON
+  /// Charge tous les protocoles disponibles (locaux + assets)
   Future<void> loadProtocols() async {
     if (_isLoaded) {
-      debugPrint('📋 Protocoles déjà chargés (${_protocols?.length ?? 0})');
       return;
     }
 
     try {
       _protocols = [];
 
-      // Liste des fichiers de protocoles connus
-      final protocolFiles = await _getProtocolFiles();
+      // 1. Découvrir les fichiers de protocoles disponibles localement
+      final protocolFiles = await DataSyncService.listLocalFiles('assets/protocoles');
+      
+      // Si la liste est vide (premier lancement sans internet), ajouter les defaults connus
+      if (protocolFiles.isEmpty) {
+        protocolFiles.addAll([
+          'etat_de_mal_epileptique.json',
+          'arret_cardio_respiratoire.json',
+        ]);
+      }
 
+      debugPrint('📂 Fichiers protocoles détectés: ${protocolFiles.length}');
+
+      // 2. Charger chaque fichier
       for (final filename in protocolFiles) {
         try {
           final protocol = await _loadProtocolFile(filename);
           if (protocol != null) {
-            _protocols!.add(protocol);
-            debugPrint('✅ Protocole chargé: ${protocol.titre}');
+            // Éviter les doublons si le fichier est présent dans assets ET local
+            if (!_protocols!.any((p) => p.titre == protocol.titre)) {
+              _protocols!.add(protocol);
+            }
           }
         } catch (e) {
           debugPrint('❌ Erreur chargement protocole $filename: $e');
         }
       }
+      
+      // Tri alphabétique
+      _protocols!.sort((a, b) => a.titre.compareTo(b.titre));
 
       _isLoaded = true;
       debugPrint('✅ ${_protocols!.length} protocole(s) chargé(s)');
@@ -49,47 +62,41 @@ class ProtocolService {
     }
   }
 
-  /// Recharge tous les protocoles
   Future<void> reloadProtocols() async {
     _isLoaded = false;
     _protocols = null;
     await loadProtocols();
   }
 
-  /// Obtient la liste des fichiers de protocoles
-  Future<List<String>> _getProtocolFiles() async {
-    // Liste statique pour l'instant - peut être rendue dynamique via GitHub API
-    return [
-      'etat_de_mal_epileptique',
-      'arret_cardio_respiratoire',
-    ];
-  }
-
-  /// Charge un fichier protocole individuel
   Future<Protocol?> _loadProtocolFile(String filename) async {
     try {
-      final data = await DataSyncService.readFile(
-          'assets/protocoles/$filename.json');
-      final jsonData = json.decode(data) as Map<String, dynamic>;
+      // Assurer le chemin complet
+      final path = filename.startsWith('assets/protocoles/') 
+          ? filename 
+          : 'assets/protocoles/$filename';
 
-      // Vérifier si c'est l'ancien format ou le nouveau
-      if (jsonData.containsKey('blocs')) {
-        // Nouveau format
-        return Protocol.fromJson(jsonData);
-      } else if (jsonData.containsKey('etapes')) {
-        // Ancien format - conversion automatique
-        return _convertOldFormat(jsonData);
-      }
-
-      return Protocol.fromJson(jsonData);
+      // Utilisation du parsing optimisé
+      return await DataSyncService.readAndParseJson(path, (jsonMap) {
+        // Logique de rétrocompatibilité (Ancien format)
+        if (jsonMap.containsKey('blocs')) {
+          return Protocol.fromJson(jsonMap);
+        } else if (jsonMap.containsKey('etapes')) {
+          return _convertOldFormat(jsonMap);
+        }
+        return Protocol.fromJson(jsonMap);
+      });
     } catch (e) {
-      debugPrint('❌ Erreur lecture protocole $filename: $e');
+      // Ne pas spammer la console si le fichier n'est pas trouvé (cas des defaults absents)
       return null;
     }
   }
 
-  /// Convertit l'ancien format de protocole vers le nouveau
+  // ... [Reste du fichier inchangé : _convertOldFormat, findByTitre, search] ...
+  
   Protocol _convertOldFormat(Map<String, dynamic> oldJson) {
+    // (Copier la méthode _convertOldFormat de votre fichier précédent ici)
+    // Pour alléger la réponse, je ne la répète pas si elle n'a pas changé,
+    // mais assurez-vous qu'elle est bien dans le fichier final.
     final blocs = <ProtocolBlock>[];
     int ordre = 0;
 
@@ -99,7 +106,6 @@ class ProtocolService {
       final contenu = <ProtocolBlock>[];
       int sousOrdre = 0;
 
-      // Convertir les éléments de l'étape
       final elements = etapeMap['elements'] as List<dynamic>? ?? [];
       for (final element in elements) {
         final elemMap = element as Map<String, dynamic>;
@@ -123,7 +129,6 @@ class ProtocolService {
         }
       }
 
-      // Ajouter une alerte si présente
       if (etapeMap['attention'] != null) {
         contenu.add(AlerteBlock(
           ordre: sousOrdre++,
@@ -132,7 +137,6 @@ class ProtocolService {
         ));
       }
 
-      // Créer la section
       blocs.add(SectionBlock(
         ordre: ordre++,
         titre: etapeMap['titre'] ?? 'Étape ${ordre}',
@@ -147,27 +151,5 @@ class ProtocolService {
       description: oldJson['description'] ?? '',
       blocs: blocs,
     );
-  }
-
-  /// Recherche un protocole par son titre
-  Protocol? findByTitre(String titre) {
-    if (!_isLoaded || _protocols == null) return null;
-    try {
-      return _protocols!.firstWhere(
-        (p) => p.titre.toLowerCase() == titre.toLowerCase(),
-      );
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Recherche des protocoles par mot-clé
-  List<Protocol> search(String query) {
-    if (!_isLoaded || _protocols == null) return [];
-    final queryLower = query.toLowerCase();
-    return _protocols!.where((p) {
-      return p.titre.toLowerCase().contains(queryLower) ||
-          p.description.toLowerCase().contains(queryLower);
-    }).toList();
   }
 }

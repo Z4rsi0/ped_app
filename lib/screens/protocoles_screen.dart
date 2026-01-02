@@ -19,6 +19,7 @@ class _ProtocolesScreenState extends State<ProtocolesScreen>
   final ProtocolService _protocolService = ProtocolService();
   bool _isLoading = true;
   String? _errorMessage;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -35,12 +36,9 @@ class _ProtocolesScreenState extends State<ProtocolesScreen>
     try {
       await _protocolService.loadProtocols();
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     } catch (e) {
-      debugPrint('❌ Erreur chargement protocoles: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -54,6 +52,12 @@ class _ProtocolesScreenState extends State<ProtocolesScreen>
   Widget build(BuildContext context) {
     super.build(context);
 
+    // Filtrage local pour la recherche
+    final filteredProtocols = _protocolService.protocols.where((p) {
+      if (_searchQuery.isEmpty) return true;
+      return p.titre.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Protocoles"),
@@ -65,138 +69,61 @@ class _ProtocolesScreenState extends State<ProtocolesScreen>
               await _protocolService.reloadProtocols();
               _loadData();
             },
-            tooltip: 'Recharger',
           ),
         ],
-      ),
-      body: _buildBody(),
-    );
-  }
-
-  Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_errorMessage != null) {
-      return _buildErrorView();
-    }
-
-    if (_protocolService.protocols.isEmpty) {
-      return _buildEmptyView();
-    }
-
-    return _buildProtocolsList();
-  }
-
-  Widget _buildErrorView() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
-            const SizedBox(height: 16),
-            Text(
-              'Erreur de chargement',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.red.shade700,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Rechercher un protocole...',
+                prefixIcon: const Icon(Icons.search),
+                fillColor: Colors.white,
+                filled: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
               ),
+              onChanged: (val) => setState(() => _searchQuery = val),
             ),
-            const SizedBox(height: 8),
-            Text(
-              _errorMessage ?? 'Erreur inconnue',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _loadData,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Réessayer'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _buildEmptyView() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.description_outlined, size: 64, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          Text(
-            'Aucun protocole disponible',
-            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProtocolsList() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(12),
-      itemCount: _protocolService.protocols.length,
-      itemBuilder: (context, index) {
-        final protocol = _protocolService.protocols[index];
-        return RepaintBoundary(
-          child: Card(
-            key: ValueKey(protocol.titre),
-            margin: const EdgeInsets.only(bottom: 12),
-            elevation: 2,
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.orange.shade100,
-                child: Icon(Icons.description, color: Colors.orange.shade700),
-              ),
-              title: Text(
-                protocol.titre,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    protocol.description,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (protocol.version != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'v${protocol.version}',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
+      body: _isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+              ? Center(child: Text('Erreur: $_errorMessage'))
+              : filteredProtocols.isEmpty
+                  ? const Center(child: Text('Aucun protocole'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: filteredProtocols.length,
+                      itemBuilder: (context, index) {
+                        final protocol = filteredProtocols[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 2,
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.orange.shade100,
+                              child: const Icon(Icons.description, color: Colors.orange),
+                            ),
+                            title: Text(protocol.titre, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text(
+                              protocol.description, 
+                              maxLines: 2, 
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ProtocolDetailScreen(protocol: protocol),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                ],
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ProtocolDetailScreen(protocol: protocol),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -208,6 +135,10 @@ class ProtocolDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Calcul du nombre total d'items (Header + Blocs)
+    // index 0 = Header
+    // index 1..N = Blocs
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(protocol.titre),
@@ -215,76 +146,50 @@ class ProtocolDetailScreen extends StatelessWidget {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 8),
-            child: Center(
-              child: GlobalWeightSelectorCompact(),
-            ),
+            child: Center(child: GlobalWeightSelectorCompact()),
           ),
         ],
       ),
-      body: ListView(
+      // OPTIMISATION: ListView.builder pour rendu paresseux (Lazy Loading)
+      body: ListView.builder(
         padding: const EdgeInsets.all(16),
+        itemCount: 1 + protocol.blocs.length, // +1 pour le header
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return _buildHeader();
+          }
+          final block = protocol.blocs[index - 1];
+          return ProtocolBlockWidget(block: block);
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // En-tête du protocole
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange.shade200, width: 2),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.info_outline,
-                        color: Colors.orange.shade700, size: 24),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Description',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  protocol.description,
-                  style: const TextStyle(fontSize: 15),
-                ),
-                if (protocol.auteur != null || protocol.version != null) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      if (protocol.auteur != null)
-                        Chip(
-                          label: Text(protocol.auteur!),
-                          avatar: const Icon(Icons.person, size: 16),
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      if (protocol.auteur != null && protocol.version != null)
-                        const SizedBox(width: 8),
-                      if (protocol.version != null)
-                        Chip(
-                          label: Text('v${protocol.version}'),
-                          avatar: const Icon(Icons.tag, size: 16),
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
+          const Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('Description', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ],
           ),
-          // Blocs du protocole
-          ...protocol.blocs.map((block) => ProtocolBlockWidget(block: block)),
+          const SizedBox(height: 8),
+          Text(protocol.description),
+          if (protocol.auteur != null) ...[
+            const SizedBox(height: 8),
+            Text('Auteur: ${protocol.auteur}', style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
+          ],
         ],
       ),
     );

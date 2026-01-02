@@ -1,15 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'models/annuaire_model.dart';
 import 'services/data_sync_service.dart';
 
-// Chargement de l'annuaire depuis le JSON
-Future<Annuaire> loadAnnuaire() async {
-  final data = await DataSyncService.readFile('annuaire.json');
-  final Map<String, dynamic> jsonData = json.decode(data);
-  return Annuaire.fromJson(jsonData);
+// Parser isolé pour l'annuaire (utilisé par le compute)
+Annuaire _parseAnnuaire(dynamic jsonMap) {
+  return Annuaire.fromJson(jsonMap as Map<String, dynamic>);
 }
 
 class AnnuaireScreen extends StatefulWidget {
@@ -39,7 +36,12 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
 
   Future<void> _loadData() async {
     try {
-      final data = await loadAnnuaire();
+      // Chargement optimisé via Isolate pour ne pas bloquer l'UI
+      final data = await DataSyncService.readAndParseJson(
+        'annuaire.json',
+        _parseAnnuaire,
+      );
+      
       if (mounted) {
         setState(() {
           annuaire = data;
@@ -49,11 +51,9 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+        setState(() => isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur de chargement: $e')),
+          SnackBar(content: Text('Erreur annuaire: $e')),
         );
       }
     }
@@ -61,7 +61,6 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
 
   void _updateFilteredServices() {
     if (annuaire == null) return;
-
     List<Service> services = isInterne ? annuaire!.interne : annuaire!.externe;
 
     if (searchController.text.isEmpty) {
@@ -69,34 +68,24 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
     } else {
       final query = searchController.text.toLowerCase();
       filteredServices = services.where((s) {
-        // Recherche dans le nom du service
+        // Recherche sur le nom du service
         if (s.nom.toLowerCase().contains(query)) return true;
-
-        // Recherche dans la description du service
+        // Recherche sur la description
         if (s.description?.toLowerCase().contains(query) ?? false) return true;
-
-        // Recherche dans les labels des contacts
+        // Recherche sur les contacts (numéro ou label)
         for (var contact in s.contacts) {
-          if (contact.label?.toLowerCase().contains(query) ?? false) {
-            return true;
-          }
+          if (contact.label?.toLowerCase().contains(query) ?? false) return true;
+          if (contact.numero.contains(query)) return true;
         }
-
         return false;
       }).toList();
     }
   }
 
   void _filterServices(String query) {
-    // Debounce: attendre 300ms après la dernière frappe avant de filtrer
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-
     _debounce = Timer(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        setState(() {
-          _updateFilteredServices();
-        });
-      }
+      if (mounted) setState(() => _updateFilteredServices());
     });
   }
 
@@ -116,7 +105,7 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Important pour AutomaticKeepAliveClientMixin
+    super.build(context); // Nécessaire pour AutomaticKeepAliveClientMixin
 
     return Scaffold(
       appBar: AppBar(
@@ -143,34 +132,15 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Expanded(
-            child: _buildModeButton(
-              'Interne',
-              isInterne,
-              Icons.business,
-              () => _toggleMode(true),
-            ),
-          ),
+          Expanded(child: _buildModeButton('Interne', isInterne, Icons.business, () => _toggleMode(true))),
           const SizedBox(width: 12),
-          Expanded(
-            child: _buildModeButton(
-              'Externe',
-              !isInterne,
-              Icons.public,
-              () => _toggleMode(false),
-            ),
-          ),
+          Expanded(child: _buildModeButton('Externe', !isInterne, Icons.public, () => _toggleMode(false))),
         ],
       ),
     );
   }
 
-  Widget _buildModeButton(
-    String label,
-    bool isActive,
-    IconData icon,
-    VoidCallback onTap,
-  ) {
+  Widget _buildModeButton(String label, bool isActive, IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -186,10 +156,7 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: isActive ? Colors.white : Colors.grey.shade700,
-            ),
+            Icon(icon, color: isActive ? Colors.white : Colors.grey.shade700),
             const SizedBox(width: 8),
             Text(
               label,
@@ -222,9 +189,7 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
                   },
                 )
               : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
         onChanged: _filterServices,
       ),
@@ -237,19 +202,9 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
+            Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
-            Text(
-              'Aucun service trouvé',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-              ),
-            ),
+            Text('Aucun service trouvé', style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
           ],
         ),
       );
@@ -258,10 +213,9 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
     return ListView.builder(
       itemCount: filteredServices.length,
       itemBuilder: (context, index) {
-        final service = filteredServices[index];
         return ServiceCard(
-          key: ValueKey(service.nom),
-          service: service,
+          key: ValueKey(filteredServices[index].nom),
+          service: filteredServices[index],
         );
       },
     );
@@ -282,6 +236,7 @@ class _ServiceCardState extends State<ServiceCard> {
 
   @override
   Widget build(BuildContext context) {
+    // Utilisation de RepaintBoundary pour optimiser le rendu lors du scroll
     return RepaintBoundary(
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -291,26 +246,14 @@ class _ServiceCardState extends State<ServiceCard> {
             ListTile(
               leading: CircleAvatar(
                 backgroundColor: Colors.green.shade100,
-                child: Icon(
-                  Icons.phone_in_talk,
-                  color: Colors.green.shade700,
-                ),
+                child: Icon(Icons.phone_in_talk, color: Colors.green.shade700),
               ),
               title: Text(
                 widget.service.nom,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               subtitle: widget.service.description != null
-                  ? Text(
-                      widget.service.description!,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 13,
-                      ),
-                    )
+                  ? Text(widget.service.description!, style: TextStyle(color: Colors.grey.shade600, fontSize: 13))
                   : null,
               trailing: Icon(
                 isExpanded ? Icons.expand_less : Icons.expand_more,
@@ -326,15 +269,13 @@ class _ServiceCardState extends State<ServiceCard> {
               Container(
                 decoration: BoxDecoration(
                   color: Colors.green.shade50,
-                  border: Border(
-                    top: BorderSide(color: Colors.grey.shade300),
-                  ),
+                  border: Border(top: BorderSide(color: Colors.grey.shade300)),
                 ),
                 child: Column(
                   children: widget.service.contacts.map((contact) {
                     return ContactTile(
-                      contact: contact,
                       key: ValueKey(contact.numero),
+                      contact: contact,
                     );
                   }).toList(),
                 ),
@@ -351,77 +292,43 @@ class ContactTile extends StatelessWidget {
 
   const ContactTile({super.key, required this.contact});
 
-  IconData _getIconForType(String? type) {
-    switch (type) {
-      case 'mobile':
-        return Icons.smartphone;
-      case 'fax':
-        return Icons.fax;
-      case 'bip':
-        return Icons.vibration;
-      case 'fixe':
-      default:
-        return Icons.phone;
+  /// Détermine si un numéro est cliquable (appelable)
+  /// Règle stricte : 10 chiffres uniquement.
+  bool _isDialable(String numero) {
+    // On nettoie tout ce qui n'est pas un chiffre
+    final clean = numero.replaceAll(RegExp(r'[^\d]'), '');
+    return clean.length == 10;
+  }
+
+  /// Retourne l'icône selon la règle métier
+  /// - Fax -> Fax
+  /// - Court (<= 5) -> Portable
+  /// - Long (10) -> Fixe
+  IconData _getIcon(String numero, String? type) {
+    if (type?.toLowerCase() == 'fax') return Icons.fax;
+    
+    final clean = numero.replaceAll(RegExp(r'[^\d]'), '');
+    
+    if (clean.length <= 5) {
+      return Icons.smartphone; // Numéro court interne
+    }
+    return Icons.phone; // Numéro long standard
+  }
+
+  Color _getColor(String? type, bool isDialable) {
+    if (!isDialable && type?.toLowerCase() != 'fax') return Colors.grey;
+    
+    switch (type?.toLowerCase()) {
+      case 'mobile': return Colors.blue;
+      case 'fax': return Colors.orange;
+      case 'bip': return Colors.purple;
+      default: return Colors.green;
     }
   }
 
-  Color _getColorForType(String? type) {
-    switch (type) {
-      case 'mobile':
-        return Colors.blue;
-      case 'fax':
-        return Colors.orange;
-      case 'bip':
-        return Colors.purple;
-      case 'fixe':
-      default:
-        return Colors.green;
-    }
-  }
-
-  /// Vérifie si le numéro est un numéro à 10 chiffres (format téléphone standard)
-  bool _isFullPhoneNumber(String phoneNumber) {
-    // Nettoyer le numéro (garder uniquement les chiffres et le +)
-    final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
-    
-    // Vérifier si c'est un numéro à 10 chiffres ou plus (format français standard)
-    // ou un numéro avec préfixe international
-    if (cleanNumber.startsWith('+')) {
-      return cleanNumber.length >= 11; // +33 6 xx xx xx xx = 12 chiffres
-    }
-    return cleanNumber.length >= 10;
-  }
-
-  /// Formate le numéro pour l'appel
-  String _formatPhoneNumberForCall(String phoneNumber) {
-    // Nettoyer le numéro
-    String cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
-    
-    // Si le numéro commence par 0 et fait 10 chiffres, c'est un numéro français
-    if (cleanNumber.startsWith('0') && cleanNumber.length == 10) {
-      return cleanNumber;
-    }
-    
-    // Si le numéro commence par +, le garder tel quel
-    if (cleanNumber.startsWith('+')) {
-      return cleanNumber;
-    }
-    
-    // Sinon, ajouter le préfixe français
-    if (cleanNumber.length == 10) {
-      return cleanNumber;
-    }
-    
-    return cleanNumber;
-  }
-
-  /// Lance l'application téléphone avec le numéro (sans appeler directement)
   Future<void> _dialPhoneNumber(BuildContext context, String phoneNumber) async {
-    final formattedNumber = _formatPhoneNumberForCall(phoneNumber);
-    final Uri dialUri = Uri(
-      scheme: 'tel',
-      path: formattedNumber,
-    );
+    final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+    final Uri dialUri = Uri(scheme: 'tel', path: cleanNumber);
 
     try {
       if (await canLaunchUrl(dialUri)) {
@@ -429,78 +336,55 @@ class ContactTile extends StatelessWidget {
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Impossible d\'ouvrir le composeur téléphonique'),
-              backgroundColor: Colors.red,
-            ),
+            const SnackBar(content: Text('Impossible d\'ouvrir le téléphone'), backgroundColor: Colors.red),
           );
         }
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
         );
       }
     }
   }
 
-  /// Copie le numéro dans le presse-papier (pour les numéros internes courts)
-  Future<void> _copyToClipboard(BuildContext context, String number) async {
-    // Utiliser le package clipboard ou montrer une snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Numéro interne: $number'),
-        backgroundColor: Colors.blue,
-        duration: const Duration(seconds: 3),
-        action: SnackBarAction(
-          label: 'OK',
-          textColor: Colors.white,
-          onPressed: () {},
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final color = _getColorForType(contact.type);
-    final isDialable = _isFullPhoneNumber(contact.numero);
+    final isDialable = _isDialable(contact.numero);
+    final icon = _getIcon(contact.numero, contact.type);
+    
+    // Si c'est un fax, on ne le rend jamais cliquable pour appeler, mais on garde la couleur
+    final isFax = contact.type?.toLowerCase() == 'fax';
+    final color = _getColor(contact.type, isDialable || isFax);
+    
+    // Le clic est activé SEULEMENT si c'est composable (10 chiffres) ET que ce n'est pas un fax
+    final canTap = isDialable && !isFax;
 
     return RepaintBoundary(
       child: InkWell(
-        onTap: () {
-          if (isDialable) {
-            _dialPhoneNumber(context, contact.numero);
-          } else {
-            _copyToClipboard(context, contact.numero);
-          }
-        },
+        onTap: canTap ? () => _dialPhoneNumber(context, contact.numero) : null,
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
+            // Fond grisé si non cliquable, sinon légèrement coloré
+            color: canTap ? color.withValues(alpha: 0.1) : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(8),
-            border:
-                Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+            border: Border.all(
+              color: canTap ? color.withValues(alpha: 0.3) : Colors.grey.shade300,
+              width: 1.5,
+            ),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color,
+                  color: canTap || isFax ? color : Colors.grey.shade400,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  _getIconForType(contact.type),
-                  color: Colors.white,
-                  size: 22,
-                ),
+                child: Icon(icon, color: Colors.white, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -521,10 +405,11 @@ class ContactTile extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        color: color,
+                        // Le numéro reste bien visible (noir/gris foncé) même si non cliquable
+                        color: canTap || isFax ? color : Colors.grey.shade800,
                       ),
                     ),
-                    if (!isDialable)
+                    if (!isDialable && !isFax)
                       Text(
                         'Numéro interne',
                         style: TextStyle(
@@ -536,18 +421,16 @@ class ContactTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDialable ? color : Colors.grey.shade400,
-                  shape: BoxShape.circle,
+              // On n'affiche l'icône d'appel à droite QUE si c'est cliquable
+              if (canTap)
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.call, color: Colors.white, size: 20),
                 ),
-                child: Icon(
-                  isDialable ? Icons.call : Icons.content_copy,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
             ],
           ),
         ),
