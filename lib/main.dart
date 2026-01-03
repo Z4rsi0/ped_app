@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'theme/app_theme.dart'; // Import du Design System
+import 'theme/app_theme.dart';
 import 'therapeutique.dart';
 import 'annuaire.dart';
 import 'screens/protocoles_screen.dart';
@@ -12,14 +12,12 @@ import 'services/protocol_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   try {
     await dotenv.load(fileName: ".env");
     debugPrint('✅ Fichier .env chargé');
   } catch (e) {
     debugPrint('⚠️ Fichier .env non trouvé (fonctionnement sans token)');
   }
-
   runApp(
     ChangeNotifierProvider(
       create: (_) => WeightProvider(),
@@ -35,19 +33,17 @@ class PediatricApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Thérapeutique Pédiatrique',
-      
-      // --- INTÉGRATION DU DESIGN SYSTEM ---
-      // Plus de ThemeData inline, tout est centralisé dans AppTheme
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system, 
-      
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
+// ... SplashScreen et MainScreen inchangés (ils sont bons) ...
+// Je te remets juste SplashScreen et MainScreen pour que le fichier soit complet
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -67,7 +63,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initializeApp() async {
     if (!mounted) return;
-
     setState(() => _status = 'Vérification de la connexion...');
     final hasInternet = await DataSyncService.hasInternetConnection();
 
@@ -75,7 +70,6 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
       setState(() => _status = 'Mise à jour des données...');
       final result = await DataSyncService.syncAllData();
-
       if (!mounted) return;
       if (result.hasErrors) {
         setState(() {
@@ -118,8 +112,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Utilisation de couleurs directes ici car le thème n'est pas encore "chargé" visuellement
-    // Mais on pourrait utiliser context.colors.primary si on voulait.
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -137,22 +129,13 @@ class _SplashScreenState extends State<SplashScreen> {
               const SizedBox(height: 24),
               const Text(
                 'MASSIO',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Thérapeutique Pédiatrique',
-                style: TextStyle(fontSize: 16, color: Colors.white70),
-              ),
+              const Text('Thérapeutique Pédiatrique', style: TextStyle(fontSize: 16, color: Colors.white70)),
               const SizedBox(height: 48),
               if (!_hasError)
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                )
+                const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white))
               else
                 const Icon(Icons.warning_amber, color: Colors.orange, size: 40),
               const SizedBox(height: 16),
@@ -191,20 +174,14 @@ class _MainScreenState extends State<MainScreen> {
     const AnnuaireScreen(),
   ];
 
-  final List<String> _titles = [
-    'Thérapeutique',
-    'Protocoles',
-    'Annuaire',
-  ];
+  final List<String> _titles = ['Thérapeutique', 'Protocoles', 'Annuaire'];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_selectedIndex]),
-        actions: _selectedIndex == 2
-            ? null
-            : const [GlobalWeightSelector()],
+        actions: _selectedIndex == 2 ? null : const [GlobalWeightSelector()],
       ),
       body: IndexedStack(
         index: _selectedIndex,
@@ -212,9 +189,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() => _selectedIndex = index);
-        },
+        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.medication_outlined),
@@ -250,9 +225,7 @@ class GlobalWeightSelector extends StatelessWidget {
             onPressed: () => _showWeightDialog(context, weightProvider),
             icon: const Icon(Icons.monitor_weight, size: 18),
             label: Text(
-              weightProvider.weight != null
-                  ? '${weightProvider.formattedWeight} kg'
-                  : 'Poids',
+              weightProvider.weight != null ? '${weightProvider.formattedWeight} kg' : 'Poids',
               style: const TextStyle(fontSize: 14),
             ),
           ),
@@ -275,17 +248,16 @@ class GlobalWeightSelector extends StatelessWidget {
               children: [
                 Text(
                   '${tempWeight.toStringAsFixed(tempWeight < 10 ? 1 : 0)} kg',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 Slider(
                   value: tempWeight,
                   min: 0.4,
-                  max: 100.0,
-                  divisions: 996,
+                  // MODIFICATION ICI : Max 50
+                  max: 50.0,
+                  // Ajustement divisions : (50 - 0.4) / 0.1 ~ 496
+                  divisions: 496,
                   onChanged: (value) {
                     setDialogState(() {
                       if (value < 10) {
@@ -301,19 +273,23 @@ class GlobalWeightSelector extends StatelessWidget {
                   children: [
                     _QuickWeightButton(
                       label: '-1',
-                      onPressed: () => setDialogState(() => tempWeight = (tempWeight - 1).clamp(0.4, 100.0)),
+                      // MODIFICATION CLAMP
+                      onPressed: () => setDialogState(() => tempWeight = (tempWeight - 1).clamp(0.4, 50.0)),
                     ),
                     _QuickWeightButton(
                       label: '-0.1',
-                      onPressed: () => setDialogState(() => tempWeight = (((tempWeight - 0.1) * 10).round() / 10).clamp(0.4, 100.0)),
+                      // MODIFICATION CLAMP
+                      onPressed: () => setDialogState(() => tempWeight = (((tempWeight - 0.1) * 10).round() / 10).clamp(0.4, 50.0)),
                     ),
                     _QuickWeightButton(
                       label: '+0.1',
-                      onPressed: () => setDialogState(() => tempWeight = (((tempWeight + 0.1) * 10).round() / 10).clamp(0.4, 100.0)),
+                      // MODIFICATION CLAMP
+                      onPressed: () => setDialogState(() => tempWeight = (((tempWeight + 0.1) * 10).round() / 10).clamp(0.4, 50.0)),
                     ),
                     _QuickWeightButton(
                       label: '+1',
-                      onPressed: () => setDialogState(() => tempWeight = (tempWeight + 1).clamp(0.4, 100.0)),
+                      // MODIFICATION CLAMP
+                      onPressed: () => setDialogState(() => tempWeight = (tempWeight + 1).clamp(0.4, 50.0)),
                     ),
                   ],
                 ),
@@ -349,7 +325,6 @@ class GlobalWeightSelector extends StatelessWidget {
 class _QuickWeightButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
-
   const _QuickWeightButton({required this.label, required this.onPressed});
 
   @override

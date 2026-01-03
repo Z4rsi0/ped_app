@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'models/annuaire_model.dart';
 import 'services/data_sync_service.dart';
-import 'theme/app_theme.dart'; // Import Theme
+import 'theme/app_theme.dart';
 
 Annuaire _parseAnnuaire(dynamic jsonMap) {
   return Annuaire.fromJson(jsonMap as Map<String, dynamic>);
@@ -105,15 +105,38 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
     final annuaireColors = context.medicalColors;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Annuaire"),
-        backgroundColor: annuaireColors.annuaireContainer,
-        foregroundColor: annuaireColors.annuaireOnContainer,
-      ),
+      // PLUS D'APPBAR ICI (Géré par MainScreen)
       body: Column(
         children: [
+          // 1. Barre de recherche (Comme Thérapeutique)
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                labelText: "Rechercher un service ou contact",
+                prefixIcon: const Icon(Icons.search),
+                fillColor: context.colors.surfaceContainerHigh,
+                filled: true,
+                suffixIcon: searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          searchController.clear();
+                          _filterServices('');
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+              onChanged: _filterServices,
+            ),
+          ),
+          
+          // 2. Sélecteur
           _buildModeSelector(annuaireColors),
-          _buildSearchBar(),
+
+          // 3. Liste
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -172,32 +195,7 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
     );
   }
 
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.all(12.0),
-      child: TextField(
-        controller: searchController,
-        decoration: InputDecoration(
-          labelText: "Rechercher un service ou contact",
-          prefixIcon: const Icon(Icons.search),
-          fillColor: context.colors.surfaceContainerHigh,
-          filled: true,
-          suffixIcon: searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    searchController.clear();
-                    _filterServices('');
-                  },
-                )
-              : null,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        ),
-        onChanged: _filterServices,
-      ),
-    );
-  }
-
+  // ... (Reste des méthodes _buildServicesList, ServiceCard, ContactTile inchangées mais nécessaires au fichier)
   Widget _buildServicesList() {
     if (filteredServices.isEmpty) {
       return Center(
@@ -226,7 +224,6 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
 
 class ServiceCard extends StatefulWidget {
   final Service service;
-
   const ServiceCard({super.key, required this.service});
 
   @override
@@ -239,7 +236,6 @@ class _ServiceCardState extends State<ServiceCard> {
   @override
   Widget build(BuildContext context) {
     final annuaireColors = context.medicalColors;
-
     return RepaintBoundary(
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -250,22 +246,10 @@ class _ServiceCardState extends State<ServiceCard> {
                 backgroundColor: annuaireColors.annuaireContainer,
                 child: Icon(Icons.phone_in_talk, color: annuaireColors.annuaireOnContainer),
               ),
-              title: Text(
-                widget.service.nom,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              subtitle: widget.service.description != null
-                  ? Text(widget.service.description!, style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 13))
-                  : null,
-              trailing: Icon(
-                isExpanded ? Icons.expand_less : Icons.expand_more,
-                color: annuaireColors.annuairePrimary,
-              ),
-              onTap: () {
-                setState(() {
-                  isExpanded = !isExpanded;
-                });
-              },
+              title: Text(widget.service.nom, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              subtitle: widget.service.description != null ? Text(widget.service.description!, style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 13)) : null,
+              trailing: Icon(isExpanded ? Icons.expand_less : Icons.expand_more, color: annuaireColors.annuairePrimary),
+              onTap: () => setState(() => isExpanded = !isExpanded),
             ),
             if (isExpanded)
               Container(
@@ -274,12 +258,7 @@ class _ServiceCardState extends State<ServiceCard> {
                   border: Border(top: BorderSide(color: context.colors.outlineVariant)),
                 ),
                 child: Column(
-                  children: widget.service.contacts.map((contact) {
-                    return ContactTile(
-                      key: ValueKey(contact.numero),
-                      contact: contact,
-                    );
-                  }).toList(),
+                  children: widget.service.contacts.map((contact) => ContactTile(key: ValueKey(contact.numero), contact: contact)).toList(),
                 ),
               ),
           ],
@@ -291,64 +270,37 @@ class _ServiceCardState extends State<ServiceCard> {
 
 class ContactTile extends StatelessWidget {
   final Contact contact;
-
   const ContactTile({super.key, required this.contact});
 
-  bool _isDialable(String numero) {
-    final clean = numero.replaceAll(RegExp(r'[^\d]'), '');
-    return clean.length == 10;
-  }
-
+  bool _isDialable(String numero) => numero.replaceAll(RegExp(r'[^\d]'), '').length == 10;
+  
   IconData _getIcon(String numero, String? type) {
     if (type?.toLowerCase() == 'fax') return Icons.fax;
-    final clean = numero.replaceAll(RegExp(r'[^\d]'), '');
-    if (clean.length <= 5) return Icons.smartphone;
+    if (numero.replaceAll(RegExp(r'[^\d]'), '').length <= 5) return Icons.smartphone;
     return Icons.phone;
   }
 
-  // Mappage des couleurs fonctionnelles vers le Design System
   Color _getColor(BuildContext context, String? type, bool isDialable) {
     final theme = context.medicalColors;
-    
     if (!isDialable && type?.toLowerCase() != 'fax') return context.colors.outline;
-    
     switch (type?.toLowerCase()) {
-      case 'mobile': return context.colors.primary; // Bleu standard
-      case 'fax': return theme.protocolPrimary; // Orange (Sémantique existante)
-      case 'bip': return theme.calculusPrimary; // Violet (Sémantique existante)
-      default: return theme.annuairePrimary; // Vert par défaut
+      case 'mobile': return context.colors.primary; 
+      case 'fax': return theme.protocolPrimary; 
+      case 'bip': return theme.calculusPrimary; 
+      default: return theme.annuairePrimary; 
     }
   }
 
   Future<void> _dialPhoneNumber(BuildContext context, String phoneNumber) async {
-    final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
-    final Uri dialUri = Uri(scheme: 'tel', path: cleanNumber);
-
-    try {
-      if (await canLaunchUrl(dialUri)) {
-        await launchUrl(dialUri);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Impossible d\'ouvrir le téléphone'), backgroundColor: Colors.red),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
+    final Uri dialUri = Uri(scheme: 'tel', path: phoneNumber.replaceAll(RegExp(r'[^\d]'), ''));
+    if (await canLaunchUrl(dialUri)) await launchUrl(dialUri);
+    else if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Impossible d\'ouvrir le téléphone'), backgroundColor: Colors.red));
   }
 
   @override
   Widget build(BuildContext context) {
     final isDialable = _isDialable(contact.numero);
-    final icon = _getIcon(contact.numero, contact.type);
     final isFax = contact.type?.toLowerCase() == 'fax';
-    
     final color = _getColor(context, contact.type, isDialable || isFax);
     final canTap = isDialable && !isFax;
 
@@ -361,65 +313,27 @@ class ContactTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: canTap ? color.withValues(alpha: 0.1) : context.colors.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: canTap ? color.withValues(alpha: 0.3) : context.colors.outlineVariant,
-              width: 1.5,
-            ),
+            border: Border.all(color: canTap ? color.withValues(alpha: 0.3) : context.colors.outlineVariant, width: 1.5),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: canTap || isFax ? color : context.colors.outline,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: Colors.white, size: 22),
+                decoration: BoxDecoration(color: canTap || isFax ? color : context.colors.outline, borderRadius: BorderRadius.circular(8)),
+                child: Icon(_getIcon(contact.numero, contact.type), color: Colors.white, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (contact.label != null)
-                      Text(
-                        contact.label!,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: context.colors.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    Text(
-                      contact.numero,
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        // Le numéro reste bien visible (noir/blanc selon thème)
-                        color: canTap || isFax ? color : context.colors.onSurface,
-                      ),
-                    ),
-                    if (!isDialable && !isFax)
-                      Text(
-                        'Numéro interne',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: context.colors.onSurfaceVariant,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
+                    if (contact.label != null) Text(contact.label!, style: TextStyle(fontSize: 13, color: context.colors.onSurfaceVariant, fontWeight: FontWeight.w500)),
+                    Text(contact.numero, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: canTap || isFax ? color : context.colors.onSurface)),
+                    if (!isDialable && !isFax) Text('Numéro interne', style: TextStyle(fontSize: 10, color: context.colors.onSurfaceVariant, fontStyle: FontStyle.italic)),
                   ],
                 ),
               ),
-              if (canTap)
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.call, color: Colors.white, size: 20),
-                ),
+              if (canTap) Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color, shape: BoxShape.circle), child: const Icon(Icons.call, color: Colors.white, size: 20)),
             ],
           ),
         ),

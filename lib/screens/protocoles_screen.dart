@@ -4,7 +4,7 @@ import '../services/protocol_service.dart';
 import '../widgets/protocol_block_widgets.dart';
 import '../widgets/global_weight_selector.dart';
 import '../utils/string_utils.dart';
-import '../theme/app_theme.dart'; // Import pour accéder aux extensions
+import '../theme/app_theme.dart';
 
 class ProtocolesScreen extends StatefulWidget {
   const ProtocolesScreen({super.key});
@@ -54,7 +54,6 @@ class _ProtocolesScreenState extends State<ProtocolesScreen>
   Widget build(BuildContext context) {
     super.build(context);
 
-    // LOGIQUE DE FILTRAGE "FUZZY"
     List<Protocol> filteredProtocols;
     
     if (_searchQuery.isEmpty) {
@@ -72,39 +71,23 @@ class _ProtocolesScreenState extends State<ProtocolesScreen>
       filteredProtocols = scored.map((e) => e.key).toList();
     }
 
-    // Récupération des couleurs sémantiques "Protocoles" (Orange adaptatif)
     final protocolColors = context.medicalColors;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Protocoles"),
-        // Utilisation de la couleur sémantique Container (Orange clair / Orange sombre)
-        backgroundColor: protocolColors.protocolContainer,
-        // Le texte doit être lisible sur ce container
-        foregroundColor: protocolColors.protocolOnContainer,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () async {
-              await _protocolService.reloadProtocols();
-              _loadData();
-            },
-            tooltip: 'Recharger',
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      // PLUS D'APPBAR ICI (Géré par MainScreen)
+      body: Column(
+        children: [
+          // 1. Barre de recherche (Comme Thérapeutique)
+          Padding(
+            padding: const EdgeInsets.all(12.0),
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Rechercher un protocole...',
                 prefixIcon: Icon(Icons.search, color: context.colors.onSurfaceVariant),
-                // Fond du champ de recherche adapté au thème (blanc en light, gris en dark)
                 fillColor: context.colors.surfaceContainerHigh, 
                 filled: true,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
@@ -118,65 +101,82 @@ class _ProtocolesScreenState extends State<ProtocolesScreen>
               onChanged: (val) => setState(() => _searchQuery = val),
             ),
           ),
-        ),
-      ),
-      body: _isLoading 
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(child: Text('Erreur: $_errorMessage'))
-              : filteredProtocols.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.search_off, size: 64, color: context.colors.outline),
-                          const SizedBox(height: 16),
-                          Text(
-                            _searchQuery.isEmpty 
-                                ? 'Aucun protocole disponible' 
-                                : 'Aucun résultat pour "$_searchQuery"',
-                            style: context.textTheme.bodyLarge?.copyWith(color: context.colors.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(12),
-                      itemCount: filteredProtocols.length,
-                      itemBuilder: (context, index) {
-                        final protocol = filteredProtocols[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          elevation: 2,
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              // Cercle coloré sémantique
-                              backgroundColor: protocolColors.protocolContainer,
-                              child: Icon(Icons.description, color: protocolColors.protocolOnContainer),
-                            ),
-                            title: Text(
-                              protocol.titre, 
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Text(
-                              protocol.description, 
-                              maxLines: 2, 
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ProtocolDetailScreen(protocol: protocol),
-                              ),
-                            ),
-                          ),
-                        );
+          
+          // 2. Liste des résultats
+          Expanded(
+            child: _isLoading 
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage != null
+                  ? Center(child: Text('Erreur: $_errorMessage'))
+                  : RefreshIndicator( // Ajout du Pull-to-Refresh pour remplacer le bouton de l'AppBar
+                      onRefresh: () async {
+                        await _protocolService.reloadProtocols();
+                        await _loadData();
                       },
+                      child: filteredProtocols.isEmpty
+                          ? ListView( // ListView pour permettre le scroll/refresh même vide
+                              children: [
+                                SizedBox(
+                                  height: MediaQuery.of(context).size.height * 0.5,
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.search_off, size: 64, color: context.colors.outline),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          _searchQuery.isEmpty 
+                                              ? 'Aucun protocole disponible' 
+                                              : 'Aucun résultat pour "$_searchQuery"',
+                                          style: context.textTheme.bodyLarge?.copyWith(color: context.colors.onSurfaceVariant),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              itemCount: filteredProtocols.length,
+                              itemBuilder: (context, index) {
+                                final protocol = filteredProtocols[index];
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  elevation: 2,
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: protocolColors.protocolContainer,
+                                      child: Icon(Icons.description, color: protocolColors.protocolOnContainer),
+                                    ),
+                                    title: Text(
+                                      protocol.titre, 
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    subtitle: Text(
+                                      protocol.description, 
+                                      maxLines: 2, 
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => ProtocolDetailScreen(protocol: protocol),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                     ),
+          ),
+        ],
+      ),
     );
   }
 }
 
+// ... La classe ProtocolDetailScreen doit garder son AppBar car c'est un nouvel écran
 class ProtocolDetailScreen extends StatelessWidget {
   final Protocol protocol;
 
@@ -219,7 +219,6 @@ class ProtocolDetailScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        // Fond sémantique avec opacité légère pour ne pas être trop agressif
         color: protocolColors.protocolContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: protocolColors.protocolContainer),
@@ -253,7 +252,6 @@ class ProtocolDetailScreen extends StatelessWidget {
                     label: Text(protocol.auteur!),
                     avatar: const Icon(Icons.person, size: 16),
                     visualDensity: VisualDensity.compact,
-                    // Les chips s'adaptent au thème de base (surface)
                   ),
                 if (protocol.version != null)
                   Chip(

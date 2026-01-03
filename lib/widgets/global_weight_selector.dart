@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/weight_provider.dart';
 
-/// Widget compact pour sélectionner le poids (utilisé dans les AppBar des écrans de détail)
 class GlobalWeightSelectorCompact extends StatelessWidget {
   const GlobalWeightSelectorCompact({super.key});
 
@@ -50,8 +49,9 @@ class GlobalWeightSelectorCompact extends StatelessWidget {
                 Slider(
                   value: tempWeight,
                   min: 0.4,
-                  max: 100.0,
-                  divisions: 996,
+                  // MODIF: 50.0
+                  max: 50.0,
+                  divisions: 496,
                   onChanged: (value) {
                     setDialogState(() {
                       if (value < 10) {
@@ -67,37 +67,23 @@ class GlobalWeightSelectorCompact extends StatelessWidget {
                   children: [
                     _QuickWeightButton(
                       label: '-1',
-                      onPressed: () {
-                        setDialogState(() {
-                          tempWeight = (tempWeight - 1).clamp(0.4, 100.0);
-                        });
-                      },
+                      // MODIF: 50.0
+                      onPressed: () => setDialogState(() => tempWeight = (tempWeight - 1).clamp(0.4, 50.0)),
                     ),
                     _QuickWeightButton(
                       label: '-0.1',
-                      onPressed: () {
-                        setDialogState(() {
-                          tempWeight = ((tempWeight - 0.1) * 10).round() / 10;
-                          tempWeight = tempWeight.clamp(0.4, 100.0);
-                        });
-                      },
+                      // MODIF: 50.0
+                      onPressed: () => setDialogState(() => tempWeight = (((tempWeight - 0.1) * 10).round() / 10).clamp(0.4, 50.0)),
                     ),
                     _QuickWeightButton(
                       label: '+0.1',
-                      onPressed: () {
-                        setDialogState(() {
-                          tempWeight = ((tempWeight + 0.1) * 10).round() / 10;
-                          tempWeight = tempWeight.clamp(0.4, 100.0);
-                        });
-                      },
+                      // MODIF: 50.0
+                      onPressed: () => setDialogState(() => tempWeight = (((tempWeight + 0.1) * 10).round() / 10).clamp(0.4, 50.0)),
                     ),
                     _QuickWeightButton(
                       label: '+1',
-                      onPressed: () {
-                        setDialogState(() {
-                          tempWeight = (tempWeight + 1).clamp(0.4, 100.0);
-                        });
-                      },
+                      // MODIF: 50.0
+                      onPressed: () => setDialogState(() => tempWeight = (tempWeight + 1).clamp(0.4, 50.0)),
                     ),
                   ],
                 ),
