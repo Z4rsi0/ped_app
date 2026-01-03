@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'models/annuaire_model.dart';
 import 'services/data_sync_service.dart';
+import 'theme/app_theme.dart'; // Import Theme
 
-// Parser isolé pour l'annuaire (utilisé par le compute)
 Annuaire _parseAnnuaire(dynamic jsonMap) {
   return Annuaire.fromJson(jsonMap as Map<String, dynamic>);
 }
@@ -36,7 +36,6 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
 
   Future<void> _loadData() async {
     try {
-      // Chargement optimisé via Isolate pour ne pas bloquer l'UI
       final data = await DataSyncService.readAndParseJson(
         'annuaire.json',
         _parseAnnuaire,
@@ -68,11 +67,8 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
     } else {
       final query = searchController.text.toLowerCase();
       filteredServices = services.where((s) {
-        // Recherche sur le nom du service
         if (s.nom.toLowerCase().contains(query)) return true;
-        // Recherche sur la description
         if (s.description?.toLowerCase().contains(query) ?? false) return true;
-        // Recherche sur les contacts (numéro ou label)
         for (var contact in s.contacts) {
           if (contact.label?.toLowerCase().contains(query) ?? false) return true;
           if (contact.numero.contains(query)) return true;
@@ -105,16 +101,18 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Nécessaire pour AutomaticKeepAliveClientMixin
+    super.build(context);
+    final annuaireColors = context.medicalColors;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Annuaire"),
-        backgroundColor: Colors.green.shade100,
+        backgroundColor: annuaireColors.annuaireContainer,
+        foregroundColor: annuaireColors.annuaireOnContainer,
       ),
       body: Column(
         children: [
-          _buildModeSelector(),
+          _buildModeSelector(annuaireColors),
           _buildSearchBar(),
           Expanded(
             child: isLoading
@@ -126,9 +124,9 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
     );
   }
 
-  Widget _buildModeSelector() {
+  Widget _buildModeSelector(MedicalColors colors) {
     return Container(
-      color: Colors.green.shade50,
+      color: colors.annuaireContainer.withValues(alpha: 0.3),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
@@ -141,27 +139,29 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
   }
 
   Widget _buildModeButton(String label, bool isActive, IconData icon, VoidCallback onTap) {
+    final annuaireColors = context.medicalColors;
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isActive ? Colors.green.shade600 : Colors.white,
+          color: isActive ? annuaireColors.annuairePrimary : context.colors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isActive ? Colors.green.shade600 : Colors.grey.shade400,
+            color: isActive ? annuaireColors.annuairePrimary : context.colors.outline,
             width: 2,
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isActive ? Colors.white : Colors.grey.shade700),
+            Icon(icon, color: isActive ? Colors.white : context.colors.onSurface),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: isActive ? Colors.white : Colors.grey.shade700,
+                color: isActive ? Colors.white : context.colors.onSurface,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -180,6 +180,8 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
         decoration: InputDecoration(
           labelText: "Rechercher un service ou contact",
           prefixIcon: const Icon(Icons.search),
+          fillColor: context.colors.surfaceContainerHigh,
+          filled: true,
           suffixIcon: searchController.text.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.clear),
@@ -189,7 +191,7 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
                   },
                 )
               : null,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         ),
         onChanged: _filterServices,
       ),
@@ -202,9 +204,9 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
+            Icon(Icons.search_off, size: 64, color: context.colors.outline),
             const SizedBox(height: 16),
-            Text('Aucun service trouvé', style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+            Text('Aucun service trouvé', style: TextStyle(fontSize: 16, color: context.colors.onSurfaceVariant)),
           ],
         ),
       );
@@ -236,28 +238,28 @@ class _ServiceCardState extends State<ServiceCard> {
 
   @override
   Widget build(BuildContext context) {
-    // Utilisation de RepaintBoundary pour optimiser le rendu lors du scroll
+    final annuaireColors = context.medicalColors;
+
     return RepaintBoundary(
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        elevation: 2,
         child: Column(
           children: [
             ListTile(
               leading: CircleAvatar(
-                backgroundColor: Colors.green.shade100,
-                child: Icon(Icons.phone_in_talk, color: Colors.green.shade700),
+                backgroundColor: annuaireColors.annuaireContainer,
+                child: Icon(Icons.phone_in_talk, color: annuaireColors.annuaireOnContainer),
               ),
               title: Text(
                 widget.service.nom,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               subtitle: widget.service.description != null
-                  ? Text(widget.service.description!, style: TextStyle(color: Colors.grey.shade600, fontSize: 13))
+                  ? Text(widget.service.description!, style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 13))
                   : null,
               trailing: Icon(
                 isExpanded ? Icons.expand_less : Icons.expand_more,
-                color: Colors.green.shade700,
+                color: annuaireColors.annuairePrimary,
               ),
               onTap: () {
                 setState(() {
@@ -268,8 +270,8 @@ class _ServiceCardState extends State<ServiceCard> {
             if (isExpanded)
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  border: Border(top: BorderSide(color: Colors.grey.shade300)),
+                  color: annuaireColors.annuaireContainer.withValues(alpha: 0.1),
+                  border: Border(top: BorderSide(color: context.colors.outlineVariant)),
                 ),
                 child: Column(
                   children: widget.service.contacts.map((contact) {
@@ -292,37 +294,29 @@ class ContactTile extends StatelessWidget {
 
   const ContactTile({super.key, required this.contact});
 
-  /// Détermine si un numéro est cliquable (appelable)
-  /// Règle stricte : 10 chiffres uniquement.
   bool _isDialable(String numero) {
-    // On nettoie tout ce qui n'est pas un chiffre
     final clean = numero.replaceAll(RegExp(r'[^\d]'), '');
     return clean.length == 10;
   }
 
-  /// Retourne l'icône selon la règle métier
-  /// - Fax -> Fax
-  /// - Court (<= 5) -> Portable
-  /// - Long (10) -> Fixe
   IconData _getIcon(String numero, String? type) {
     if (type?.toLowerCase() == 'fax') return Icons.fax;
-    
     final clean = numero.replaceAll(RegExp(r'[^\d]'), '');
-    
-    if (clean.length <= 5) {
-      return Icons.smartphone; // Numéro court interne
-    }
-    return Icons.phone; // Numéro long standard
+    if (clean.length <= 5) return Icons.smartphone;
+    return Icons.phone;
   }
 
-  Color _getColor(String? type, bool isDialable) {
-    if (!isDialable && type?.toLowerCase() != 'fax') return Colors.grey;
+  // Mappage des couleurs fonctionnelles vers le Design System
+  Color _getColor(BuildContext context, String? type, bool isDialable) {
+    final theme = context.medicalColors;
+    
+    if (!isDialable && type?.toLowerCase() != 'fax') return context.colors.outline;
     
     switch (type?.toLowerCase()) {
-      case 'mobile': return Colors.blue;
-      case 'fax': return Colors.orange;
-      case 'bip': return Colors.purple;
-      default: return Colors.green;
+      case 'mobile': return context.colors.primary; // Bleu standard
+      case 'fax': return theme.protocolPrimary; // Orange (Sémantique existante)
+      case 'bip': return theme.calculusPrimary; // Violet (Sémantique existante)
+      default: return theme.annuairePrimary; // Vert par défaut
     }
   }
 
@@ -353,12 +347,9 @@ class ContactTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDialable = _isDialable(contact.numero);
     final icon = _getIcon(contact.numero, contact.type);
-    
-    // Si c'est un fax, on ne le rend jamais cliquable pour appeler, mais on garde la couleur
     final isFax = contact.type?.toLowerCase() == 'fax';
-    final color = _getColor(contact.type, isDialable || isFax);
     
-    // Le clic est activé SEULEMENT si c'est composable (10 chiffres) ET que ce n'est pas un fax
+    final color = _getColor(context, contact.type, isDialable || isFax);
     final canTap = isDialable && !isFax;
 
     return RepaintBoundary(
@@ -368,11 +359,10 @@ class ContactTile extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            // Fond grisé si non cliquable, sinon légèrement coloré
-            color: canTap ? color.withValues(alpha: 0.1) : Colors.grey.shade100,
+            color: canTap ? color.withValues(alpha: 0.1) : context.colors.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: canTap ? color.withValues(alpha: 0.3) : Colors.grey.shade300,
+              color: canTap ? color.withValues(alpha: 0.3) : context.colors.outlineVariant,
               width: 1.5,
             ),
           ),
@@ -381,7 +371,7 @@ class ContactTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: canTap || isFax ? color : Colors.grey.shade400,
+                  color: canTap || isFax ? color : context.colors.outline,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: Colors.white, size: 22),
@@ -396,7 +386,7 @@ class ContactTile extends StatelessWidget {
                         contact.label!,
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey.shade700,
+                          color: context.colors.onSurfaceVariant,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -405,8 +395,8 @@ class ContactTile extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        // Le numéro reste bien visible (noir/gris foncé) même si non cliquable
-                        color: canTap || isFax ? color : Colors.grey.shade800,
+                        // Le numéro reste bien visible (noir/blanc selon thème)
+                        color: canTap || isFax ? color : context.colors.onSurface,
                       ),
                     ),
                     if (!isDialable && !isFax)
@@ -414,14 +404,13 @@ class ContactTile extends StatelessWidget {
                         'Numéro interne',
                         style: TextStyle(
                           fontSize: 10,
-                          color: Colors.grey.shade500,
+                          color: context.colors.onSurfaceVariant,
                           fontStyle: FontStyle.italic,
                         ),
                       ),
                   ],
                 ),
               ),
-              // On n'affiche l'icône d'appel à droite QUE si c'est cliquable
               if (canTap)
                 Container(
                   padding: const EdgeInsets.all(8),

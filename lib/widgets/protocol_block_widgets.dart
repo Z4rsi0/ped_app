@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/protocol_model.dart';
 import '../providers/weight_provider.dart';
 import '../services/medicament_resolver.dart';
+import '../theme/app_theme.dart'; // Import du Design System
 
 /// Widget racine pour rendre un bloc
 class ProtocolBlockWidget extends StatelessWidget {
@@ -54,15 +55,20 @@ class _SectionBlockWidgetState extends State<SectionBlockWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    // On utilise la couleur Primary du thème global pour structurer les sections
+    final headerColor = colors.primary; 
+    final headerContentColor = colors.onPrimary;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface, // Fond adaptatif (blanc/gris sombre)
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1.5),
+        border: Border.all(color: colors.outlineVariant, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: colors.shadow.withValues(alpha: 0.05), // Ombre très légère
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -80,7 +86,7 @@ class _SectionBlockWidgetState extends State<SectionBlockWidget> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade600,
+                color: headerColor,
                 borderRadius: BorderRadius.vertical(
                   top: const Radius.circular(10),
                   bottom: _isExpanded ? Radius.zero : const Radius.circular(10),
@@ -91,8 +97,8 @@ class _SectionBlockWidgetState extends State<SectionBlockWidget> {
                   Container(
                     width: 28,
                     height: 28,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
+                    decoration: BoxDecoration(
+                      color: headerContentColor,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -100,7 +106,7 @@ class _SectionBlockWidgetState extends State<SectionBlockWidget> {
                         '${widget.block.ordre + 1}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade600,
+                          color: headerColor,
                           fontSize: 14,
                         ),
                       ),
@@ -110,10 +116,10 @@ class _SectionBlockWidgetState extends State<SectionBlockWidget> {
                   Expanded(
                     child: Text(
                       widget.block.titre,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: headerContentColor,
                       ),
                     ),
                   ),
@@ -123,21 +129,20 @@ class _SectionBlockWidgetState extends State<SectionBlockWidget> {
                           horizontal: 8, vertical: 4),
                       margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: headerContentColor.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.timer,
-                              size: 14, color: Colors.white),
+                          Icon(Icons.timer, size: 14, color: headerContentColor),
                           const SizedBox(width: 4),
                           Text(
                             widget.block.temps!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: headerContentColor,
                             ),
                           ),
                         ],
@@ -145,7 +150,7 @@ class _SectionBlockWidgetState extends State<SectionBlockWidget> {
                     ),
                   Icon(
                     _isExpanded ? Icons.expand_less : Icons.expand_more,
-                    color: Colors.white,
+                    color: headerContentColor,
                   ),
                 ],
               ),
@@ -175,7 +180,8 @@ class TexteBlockWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle style = const TextStyle(fontSize: 15, height: 1.5);
+    // Style par défaut venant du thème (gère le noir/blanc auto)
+    TextStyle style = context.textTheme.bodyMedium!.copyWith(height: 1.5);
 
     if (block.format != null) {
       style = style.copyWith(
@@ -184,7 +190,7 @@ class TexteBlockWidget extends StatelessWidget {
         decoration: block.format!.souligne ? TextDecoration.underline : null,
         color: block.format!.couleur != null
             ? _parseColor(block.format!.couleur!)
-            : null,
+            : null, // Si null, garde la couleur par défaut du thème
         fontSize: block.format!.taillePolicePx,
       );
     }
@@ -218,12 +224,14 @@ class TableauBlockWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: Colors.grey.shade300),
+        side: BorderSide(color: colors.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,7 +241,8 @@ class TableauBlockWidget extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                // Surface légèrement colorée pour le titre
+                color: colors.surfaceContainerHighest,
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(8)),
               ),
@@ -245,7 +254,8 @@ class TableauBlockWidget extends StatelessWidget {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              headingRowColor: WidgetStateProperty.all(Colors.blue.shade50),
+              // Header avec couleur adaptative
+              headingRowColor: WidgetStateProperty.all(colors.surfaceContainerHigh),
               columns: block.colonnes
                   .map((col) => DataColumn(
                         label: Text(
@@ -286,7 +296,6 @@ class _ImageBlockWidgetState extends State<ImageBlockWidget> {
   void initState() {
     super.initState();
     if (widget.block.estBase64) {
-      // Décodage hors du main thread
       _imageFuture = compute(base64Decode, widget.block.source);
     }
   }
@@ -303,9 +312,9 @@ class _ImageBlockWidgetState extends State<ImageBlockWidget> {
               snapshot.hasData) {
             return Image.memory(snapshot.data!, fit: BoxFit.contain);
           } else if (snapshot.hasError) {
-            return const SizedBox(
+            return SizedBox(
               height: 100,
-              child: Center(child: Text('Erreur image', style: TextStyle(color: Colors.red))),
+              child: Center(child: Text('Erreur image', style: TextStyle(color: context.colors.error))),
             );
           }
           return const SizedBox(
@@ -320,11 +329,11 @@ class _ImageBlockWidgetState extends State<ImageBlockWidget> {
         fit: BoxFit.contain,
         errorBuilder: (ctx, err, stack) => Container(
           padding: const EdgeInsets.all(16),
-          color: Colors.grey.shade200,
-          child: const Column(
+          color: context.colors.surfaceContainerHighest,
+          child: Column(
             children: [
-              Icon(Icons.broken_image, color: Colors.grey),
-              Text('Image introuvable', textAlign: TextAlign.center),
+              Icon(Icons.broken_image, color: context.colors.outline),
+              const Text('Image introuvable', textAlign: TextAlign.center),
             ],
           ),
         ),
@@ -349,10 +358,9 @@ class _ImageBlockWidgetState extends State<ImageBlockWidget> {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 widget.block.legende!,
-                style: TextStyle(
-                  fontSize: 12,
+                style: context.textTheme.bodySmall?.copyWith(
                   fontStyle: FontStyle.italic,
-                  color: Colors.grey.shade600,
+                  color: context.colors.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -371,6 +379,10 @@ class MedicamentBlockWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Sémantique: Alerte (pour erreur) & Calculus (pour affichage dose)
+    final alerteColors = context.medicalColors;
+    final calculusColors = context.medicalColors;
+
     return Consumer<WeightProvider>(
       builder: (context, weightProvider, child) {
         final resolver = MedicamentResolver();
@@ -379,7 +391,6 @@ class MedicamentBlockWidget extends StatelessWidget {
         PosologieResolue? posologie;
         String? error;
 
-        // Blocage des crashs potentiels
         try {
           posologie = resolver.resolveMedicament(
             nomMedicament: block.nomMedicament,
@@ -391,23 +402,24 @@ class MedicamentBlockWidget extends StatelessWidget {
           error = e.toString().replaceAll('Exception:', '').trim();
         }
 
+        // Affichage ERREUR
         if (error != null) {
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.red.shade50,
+              color: alerteColors.alerteContainer,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.red.shade200),
+              border: Border.all(color: alerteColors.alertePrimary.withValues(alpha: 0.5)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.error_outline, color: Colors.red),
+                Icon(Icons.error_outline, color: alerteColors.alertePrimary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     '${block.nomMedicament}: $error',
-                    style: TextStyle(color: Colors.red.shade800, fontSize: 13),
+                    style: TextStyle(color: alerteColors.alerteOnContainer, fontSize: 13),
                   ),
                 ),
               ],
@@ -417,13 +429,14 @@ class MedicamentBlockWidget extends StatelessWidget {
 
         if (posologie == null) return const SizedBox.shrink();
 
+        // Affichage DOSE (Sémantique Calculus/Violet)
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.purple.shade50,
+            color: calculusColors.calculusContainer,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.purple.shade200, width: 1.5),
+            border: Border.all(color: calculusColors.calculusPrimary.withValues(alpha: 0.3), width: 1.5),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -435,10 +448,10 @@ class MedicamentBlockWidget extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.purple.shade600,
+                      color: calculusColors.calculusPrimary,
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Icon(Icons.medication, color: Colors.white, size: 18),
+                    child: Icon(Icons.medication, color: calculusColors.calculusOnContainer, size: 18),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -450,7 +463,7 @@ class MedicamentBlockWidget extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.purple.shade900,
+                            color: calculusColors.calculusOnContainer, // Contraste fort sur le container
                           ),
                         ),
                         if (posologie.voie.isNotEmpty)
@@ -458,16 +471,16 @@ class MedicamentBlockWidget extends StatelessWidget {
                             margin: const EdgeInsets.only(top: 4),
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: context.colors.surface, // Fond blanc/noir
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: Colors.purple.shade200),
+                              border: Border.all(color: calculusColors.calculusPrimary.withValues(alpha: 0.3)),
                             ),
                             child: Text(
                               posologie.voie,
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.purple.shade700,
+                                color: calculusColors.calculusPrimary,
                               ),
                             ),
                           ),
@@ -478,18 +491,18 @@ class MedicamentBlockWidget extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               
-              // Dose Calculée (Le plus important)
+              // Dose Calculée (Zone Blanche/Noire pour lisibilité max)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.colors.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.purple.shade100),
+                  border: Border.all(color: calculusColors.calculusPrimary.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.calculate, size: 20, color: Colors.purple.shade700),
+                    Icon(Icons.calculate, size: 20, color: calculusColors.calculusPrimary),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -497,7 +510,7 @@ class MedicamentBlockWidget extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
-                          color: Colors.purple.shade900,
+                          color: calculusColors.calculusPrimary,
                         ),
                       ),
                     ),
@@ -509,7 +522,7 @@ class MedicamentBlockWidget extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.science, size: 16, color: Colors.grey.shade700),
+                    Icon(Icons.science, size: 16, color: context.colors.onSurfaceVariant),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -517,7 +530,7 @@ class MedicamentBlockWidget extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontStyle: FontStyle.italic,
-                          color: Colors.grey.shade800,
+                          color: context.colors.onSurface,
                         ),
                       ),
                     ),
@@ -529,7 +542,7 @@ class MedicamentBlockWidget extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'ℹ️ ${block.commentaire}',
-                  style: TextStyle(fontSize: 12, color: Colors.purple.shade800),
+                  style: TextStyle(fontSize: 12, color: calculusColors.calculusOnContainer.withValues(alpha: 0.8)),
                 ),
               ],
             ],
@@ -540,7 +553,7 @@ class MedicamentBlockWidget extends StatelessWidget {
   }
 }
 
-/// FORMULAIRE : Optimisation mineure
+/// FORMULAIRE
 class FormulaireBlockWidget extends StatefulWidget {
   final FormulaireBlock block;
 
@@ -556,7 +569,6 @@ class _FormulaireBlockWidgetState extends State<FormulaireBlockWidget> {
   @override
   void initState() {
     super.initState();
-    // Init valeurs
     for (final champ in widget.block.champs) {
       if (champ.defaut != null) {
         _valeurs[champ.id] = champ.defaut!;
@@ -587,29 +599,29 @@ class _FormulaireBlockWidgetState extends State<FormulaireBlockWidget> {
   Widget build(BuildContext context) {
     final score = _calculerScore();
     final interpretation = _getInterpretation(score);
+    final colors = context.colors;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
           // Header
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.teal.shade700,
+              color: colors.primary,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.assignment, color: Colors.white),
+                Icon(Icons.assignment, color: colors.onPrimary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     widget.block.titre,
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(
+                        color: colors.onPrimary, fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
               ],
@@ -628,7 +640,7 @@ class _FormulaireBlockWidgetState extends State<FormulaireBlockWidget> {
             decoration: BoxDecoration(
               color: interpretation != null 
                   ? _getNiveauColor(interpretation.niveau).withValues(alpha: 0.1)
-                  : Colors.grey.shade50,
+                  : colors.surfaceContainerHighest,
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
             ),
             child: Row(
@@ -643,7 +655,7 @@ class _FormulaireBlockWidgetState extends State<FormulaireBlockWidget> {
                       style: TextStyle(
                         fontSize: 24, 
                         fontWeight: FontWeight.bold,
-                        color: interpretation != null ? _getNiveauColor(interpretation.niveau) : Colors.black,
+                        color: interpretation != null ? _getNiveauColor(interpretation.niveau) : colors.onSurface,
                       ),
                     ),
                     if (interpretation != null)
@@ -661,9 +673,6 @@ class _FormulaireBlockWidgetState extends State<FormulaireBlockWidget> {
     );
   }
 
-  // ... [Les méthodes _buildChamp, _buildNombreChamp, etc. restent inchangées, je ne les répète pas pour gagner de la place, mais elles doivent être là]
-  // Je remets juste _getInterpretation et _getNiveauColor pour la complétude
-  
   FormulaireInterpretation? _getInterpretation(num score) {
     if (widget.block.interpretations == null) return null;
     for (final interp in widget.block.interpretations!) {
@@ -672,20 +681,18 @@ class _FormulaireBlockWidgetState extends State<FormulaireBlockWidget> {
     return null;
   }
 
+  // Mappage couleur pour les scores (Utilise les couleurs sémantiques)
   Color _getNiveauColor(String? niveau) {
     switch (niveau) {
-      case 'faible': return Colors.green;
-      case 'modere': return Colors.orange;
-      case 'eleve': return Colors.deepOrange;
-      case 'critique': return Colors.red;
-      default: return Colors.blue;
+      case 'faible': return context.medicalColors.annuairePrimary; // Vert
+      case 'modere': return context.medicalColors.protocolPrimary; // Orange
+      case 'eleve': return context.medicalColors.alertePrimary; // Rouge
+      case 'critique': return context.colors.error; // Rouge vif
+      default: return context.colors.primary;
     }
   }
   
-  // (Note: Dans le fichier final, assurez-vous d'inclure _buildChamp et ses sous-méthodes comme dans votre fichier original)
-  // Pour éviter une coupure de réponse, je vais inclure le strict minimum ici.
   Widget _buildChamp(FormulaireChamp champ) {
-    // ... Logique UI standard ...
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: _buildChampContent(champ),
@@ -701,17 +708,20 @@ class _FormulaireBlockWidgetState extends State<FormulaireBlockWidget> {
     }
   }
   
-  // Implémentation rapide pour compilation
   Widget _buildNombreUI(FormulaireChamp c) {
     final val = _valeurs[c.id] ?? 0;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(c.label),
+        Expanded(child: Text(c.label)),
         Row(
           children: [
             IconButton(icon: const Icon(Icons.remove), onPressed: () => setState(() => _valeurs[c.id] = val - 1)),
-            Text(val.toStringAsFixed(0), style: const TextStyle(fontWeight: FontWeight.bold)),
+            Container(
+              constraints: const BoxConstraints(minWidth: 30),
+              alignment: Alignment.center,
+              child: Text(val.toStringAsFixed(0), style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
             IconButton(icon: const Icon(Icons.add), onPressed: () => setState(() => _valeurs[c.id] = val + 1)),
           ],
         )
@@ -727,11 +737,41 @@ class _FormulaireBlockWidgetState extends State<FormulaireBlockWidget> {
     );
   }
   
-  Widget _buildSelectUI(FormulaireChamp c) => const SizedBox(); // Placeholder
-  Widget _buildRadioUI(FormulaireChamp c) => const SizedBox(); // Placeholder
+  // Implémentation basique des Dropdowns pour le support complet
+  Widget _buildSelectUI(FormulaireChamp c) {
+    if (c.options == null) return const SizedBox();
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(child: Text(c.label)),
+        DropdownButton<num>(
+          value: _valeurs[c.id],
+          items: c.options!.map((o) => DropdownMenuItem(value: o.valeur, child: Text(o.label))).toList(),
+          onChanged: (v) => setState(() => _valeurs[c.id] = v ?? 0),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildRadioUI(FormulaireChamp c) {
+     if (c.options == null) return const SizedBox();
+     return Column(
+       crossAxisAlignment: CrossAxisAlignment.start,
+       children: [
+         Text(c.label, style: const TextStyle(fontWeight: FontWeight.bold)),
+         ...c.options!.map((o) => RadioListTile<num>(
+           title: Text(o.label),
+           value: o.valeur,
+           groupValue: _valeurs[c.id],
+           onChanged: (v) => setState(() => _valeurs[c.id] = v ?? 0),
+           dense: true,
+         )),
+       ],
+     );
+  }
 }
 
-/// ALERTE
+/// ALERTE : Mappage sémantique
 class AlerteBlockWidget extends StatelessWidget {
   final AlerteBlock block;
 
@@ -741,19 +781,32 @@ class AlerteBlockWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Color bg, border, text;
     IconData icon;
+    final medColors = context.medicalColors;
 
     switch (block.niveau) {
       case AlerteNiveau.info:
-        bg = Colors.blue.shade50; border = Colors.blue; text = Colors.blue.shade900; icon = Icons.info;
+        bg = context.colors.surfaceContainer; 
+        border = context.colors.primary; 
+        text = context.colors.onSurface; 
+        icon = Icons.info;
         break;
       case AlerteNiveau.attention:
-        bg = Colors.orange.shade50; border = Colors.orange; text = Colors.orange.shade900; icon = Icons.warning;
+        bg = medColors.protocolContainer; 
+        border = medColors.protocolPrimary; 
+        text = medColors.protocolOnContainer; 
+        icon = Icons.warning;
         break;
       case AlerteNiveau.danger:
-        bg = Colors.red.shade50; border = Colors.red; text = Colors.red.shade900; icon = Icons.error;
+        bg = medColors.alerteContainer; 
+        border = medColors.alertePrimary; 
+        text = medColors.alerteOnContainer; 
+        icon = Icons.error;
         break;
       case AlerteNiveau.critique:
-        bg = Colors.red.shade100; border = Colors.red.shade900; text = Colors.red.shade900; icon = Icons.dangerous;
+        bg = context.colors.errorContainer; 
+        border = context.colors.error; 
+        text = context.colors.onErrorContainer; 
+        icon = Icons.dangerous;
         break;
     }
 

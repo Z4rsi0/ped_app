@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'theme/app_theme.dart'; // Import du Design System
 import 'therapeutique.dart';
 import 'annuaire.dart';
 import 'screens/protocoles_screen.dart';
@@ -12,7 +13,6 @@ import 'services/protocol_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Charger le fichier .env (contient GITHUB_TOKEN)
   try {
     await dotenv.load(fileName: ".env");
     debugPrint('✅ Fichier .env chargé');
@@ -35,10 +35,13 @@ class PediatricApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Thérapeutique Pédiatrique',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      
+      // --- INTÉGRATION DU DESIGN SYSTEM ---
+      // Plus de ThemeData inline, tout est centralisé dans AppTheme
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system, 
+      
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
     );
@@ -63,15 +66,17 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
-    // Vérifier connexion Internet
+    if (!mounted) return;
+
     setState(() => _status = 'Vérification de la connexion...');
     final hasInternet = await DataSyncService.hasInternetConnection();
 
     if (hasInternet) {
-      // Synchroniser les données
+      if (!mounted) return;
       setState(() => _status = 'Mise à jour des données...');
       final result = await DataSyncService.syncAllData();
 
+      if (!mounted) return;
       if (result.hasErrors) {
         setState(() {
           _status = result.message;
@@ -83,12 +88,12 @@ class _SplashScreenState extends State<SplashScreen> {
         await Future.delayed(const Duration(seconds: 1));
       }
     } else {
-      setState(
-          () => _status = 'Mode hors ligne - Utilisation des données locales');
+      if (!mounted) return;
+      setState(() => _status = 'Mode hors ligne');
       await Future.delayed(const Duration(seconds: 1));
     }
 
-    // Précharger les médicaments pour le resolver
+    if (!mounted) return;
     setState(() => _status = 'Chargement des médicaments...');
     try {
       await MedicamentResolver().loadMedicaments();
@@ -96,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen> {
       debugPrint('⚠️ Erreur préchargement médicaments: $e');
     }
 
-    // Charger les protocoles
+    if (!mounted) return;
     setState(() => _status = 'Chargement des protocoles...');
     try {
       await ProtocolService().loadProtocols();
@@ -104,7 +109,6 @@ class _SplashScreenState extends State<SplashScreen> {
       debugPrint('⚠️ Erreur préchargement protocoles: $e');
     }
 
-    // Navigation vers l'écran principal
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const MainScreen()),
@@ -114,24 +118,22 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Utilisation de couleurs directes ici car le thème n'est pas encore "chargé" visuellement
+    // Mais on pourrait utiliser context.colors.primary si on voulait.
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.blue.shade400, Colors.blue.shade800],
+            colors: [Colors.blue.shade700, Colors.blue.shade900],
           ),
         ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.medical_services,
-                size: 80,
-                color: Colors.white,
-              ),
+              const Icon(Icons.medical_services, size: 80, color: Colors.white),
               const SizedBox(height: 24),
               const Text(
                 'MASSIO',
@@ -144,10 +146,7 @@ class _SplashScreenState extends State<SplashScreen> {
               const SizedBox(height: 8),
               const Text(
                 'Thérapeutique Pédiatrique',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.white70),
               ),
               const SizedBox(height: 48),
               if (!_hasError)
@@ -193,7 +192,7 @@ class _MainScreenState extends State<MainScreen> {
   ];
 
   final List<String> _titles = [
-    'Thérapeutique Pédiatrique',
+    'Thérapeutique',
     'Protocoles',
     'Annuaire',
   ];
@@ -203,12 +202,9 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_selectedIndex]),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: _selectedIndex == 2
             ? null
-            : const [
-                GlobalWeightSelector(),
-              ],
+            : const [GlobalWeightSelector()],
       ),
       body: IndexedStack(
         index: _selectedIndex,
@@ -217,9 +213,7 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
+          setState(() => _selectedIndex = index);
         },
         destinations: const [
           NavigationDestination(
@@ -243,7 +237,6 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-/// Widget global pour sélectionner le poids (version compacte pour l'AppBar)
 class GlobalWeightSelector extends StatelessWidget {
   const GlobalWeightSelector({super.key});
 
@@ -295,11 +288,10 @@ class GlobalWeightSelector extends StatelessWidget {
                   divisions: 996,
                   onChanged: (value) {
                     setDialogState(() {
-                      // Arrondir selon les tranches
                       if (value < 10) {
-                        tempWeight = (value * 10).round() / 10; // 0.1 kg
+                        tempWeight = (value * 10).round() / 10;
                       } else {
-                        tempWeight = value.roundToDouble(); // 1 kg
+                        tempWeight = value.roundToDouble();
                       }
                     });
                   },
@@ -309,37 +301,19 @@ class GlobalWeightSelector extends StatelessWidget {
                   children: [
                     _QuickWeightButton(
                       label: '-1',
-                      onPressed: () {
-                        setDialogState(() {
-                          tempWeight = (tempWeight - 1).clamp(0.4, 100.0);
-                        });
-                      },
+                      onPressed: () => setDialogState(() => tempWeight = (tempWeight - 1).clamp(0.4, 100.0)),
                     ),
                     _QuickWeightButton(
                       label: '-0.1',
-                      onPressed: () {
-                        setDialogState(() {
-                          tempWeight = ((tempWeight - 0.1) * 10).round() / 10;
-                          tempWeight = tempWeight.clamp(0.4, 100.0);
-                        });
-                      },
+                      onPressed: () => setDialogState(() => tempWeight = (((tempWeight - 0.1) * 10).round() / 10).clamp(0.4, 100.0)),
                     ),
                     _QuickWeightButton(
                       label: '+0.1',
-                      onPressed: () {
-                        setDialogState(() {
-                          tempWeight = ((tempWeight + 0.1) * 10).round() / 10;
-                          tempWeight = tempWeight.clamp(0.4, 100.0);
-                        });
-                      },
+                      onPressed: () => setDialogState(() => tempWeight = (((tempWeight + 0.1) * 10).round() / 10).clamp(0.4, 100.0)),
                     ),
                     _QuickWeightButton(
                       label: '+1',
-                      onPressed: () {
-                        setDialogState(() {
-                          tempWeight = (tempWeight + 1).clamp(0.4, 100.0);
-                        });
-                      },
+                      onPressed: () => setDialogState(() => tempWeight = (tempWeight + 1).clamp(0.4, 100.0)),
                     ),
                   ],
                 ),
@@ -376,10 +350,7 @@ class _QuickWeightButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
 
-  const _QuickWeightButton({
-    required this.label,
-    required this.onPressed,
-  });
+  const _QuickWeightButton({required this.label, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
