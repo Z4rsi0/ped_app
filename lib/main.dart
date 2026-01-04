@@ -7,17 +7,27 @@ import 'annuaire.dart';
 import 'screens/protocoles_screen.dart';
 import 'providers/weight_provider.dart';
 import 'services/data_sync_service.dart';
-import 'services/medicament_resolver.dart';
-import 'services/protocol_service.dart';
+import 'services/storage_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 1. Chargement des variables d'environnement
   try {
     await dotenv.load(fileName: ".env");
     debugPrint('✅ Fichier .env chargé');
   } catch (e) {
     debugPrint('⚠️ Fichier .env non trouvé (fonctionnement sans token)');
   }
+
+  // 2. Initialisation du Moteur de Données (Hive)
+  // C'est ici que les données sont chargées en mémoire depuis le disque.
+  try {
+    await StorageService().init();
+  } catch (e) {
+    debugPrint('❌ Erreur critique init StorageService: $e');
+  }
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => WeightProvider(),
@@ -42,8 +52,6 @@ class PediatricApp extends StatelessWidget {
   }
 }
 
-// ... SplashScreen et MainScreen inchangés (ils sont bons) ...
-// Je te remets juste SplashScreen et MainScreen pour que le fichier soit complet
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -63,46 +71,43 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initializeApp() async {
     if (!mounted) return;
+    
+    // 1. Vérification réseau
     setState(() => _status = 'Vérification de la connexion...');
     final hasInternet = await DataSyncService.hasInternetConnection();
 
+    // 2. Synchronisation (Mise à jour du cache Hive si réseau dispo)
     if (hasInternet) {
       if (!mounted) return;
       setState(() => _status = 'Mise à jour des données...');
+      
+      // Cette étape met à jour Hive en arrière-plan
       final result = await DataSyncService.syncAllData();
+      
       if (!mounted) return;
       if (result.hasErrors) {
         setState(() {
           _status = result.message;
           _hasError = true;
         });
+        // Petit délai pour laisser l'utilisateur lire l'erreur
         await Future.delayed(const Duration(seconds: 2));
       } else {
         setState(() => _status = result.message);
         await Future.delayed(const Duration(seconds: 1));
       }
     } else {
+      // Mode Hors Ligne
       if (!mounted) return;
       setState(() => _status = 'Mode hors ligne');
+      // On utilise simplement les données déjà présentes dans Hive (chargées au main)
       await Future.delayed(const Duration(seconds: 1));
     }
 
-    if (!mounted) return;
-    setState(() => _status = 'Chargement des médicaments...');
-    try {
-      await MedicamentResolver().loadMedicaments();
-    } catch (e) {
-      debugPrint('⚠️ Erreur préchargement médicaments: $e');
-    }
+    // NOTE : Plus besoin de "Chargement des médicaments/protocoles" ici.
+    // StorageService().init() l'a déjà fait au démarrage de l'app.
 
-    if (!mounted) return;
-    setState(() => _status = 'Chargement des protocoles...');
-    try {
-      await ProtocolService().loadProtocols();
-    } catch (e) {
-      debugPrint('⚠️ Erreur préchargement protocoles: $e');
-    }
-
+    // 3. Navigation
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const MainScreen()),
@@ -254,9 +259,7 @@ class GlobalWeightSelector extends StatelessWidget {
                 Slider(
                   value: tempWeight,
                   min: 0.4,
-                  // MODIFICATION ICI : Max 50
                   max: 50.0,
-                  // Ajustement divisions : (50 - 0.4) / 0.1 ~ 496
                   divisions: 496,
                   onChanged: (value) {
                     setDialogState(() {
@@ -273,22 +276,18 @@ class GlobalWeightSelector extends StatelessWidget {
                   children: [
                     _QuickWeightButton(
                       label: '-1',
-                      // MODIFICATION CLAMP
                       onPressed: () => setDialogState(() => tempWeight = (tempWeight - 1).clamp(0.4, 50.0)),
                     ),
                     _QuickWeightButton(
                       label: '-0.1',
-                      // MODIFICATION CLAMP
                       onPressed: () => setDialogState(() => tempWeight = (((tempWeight - 0.1) * 10).round() / 10).clamp(0.4, 50.0)),
                     ),
                     _QuickWeightButton(
                       label: '+0.1',
-                      // MODIFICATION CLAMP
                       onPressed: () => setDialogState(() => tempWeight = (((tempWeight + 0.1) * 10).round() / 10).clamp(0.4, 50.0)),
                     ),
                     _QuickWeightButton(
                       label: '+1',
-                      // MODIFICATION CLAMP
                       onPressed: () => setDialogState(() => tempWeight = (tempWeight + 1).clamp(0.4, 50.0)),
                     ),
                   ],

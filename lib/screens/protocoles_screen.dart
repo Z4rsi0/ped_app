@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/protocol_model.dart';
-import '../services/protocol_service.dart';
+import '../services/storage_service.dart';
+import '../services/data_sync_service.dart';
 import '../widgets/protocol_block_widgets.dart';
 import '../widgets/global_weight_selector.dart';
 import '../utils/string_utils.dart';
@@ -13,53 +14,24 @@ class ProtocolesScreen extends StatefulWidget {
   State<ProtocolesScreen> createState() => _ProtocolesScreenState();
 }
 
-class _ProtocolesScreenState extends State<ProtocolesScreen>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  final ProtocolService _protocolService = ProtocolService();
-  bool _isLoading = true;
-  String? _errorMessage;
+class _ProtocolesScreenState extends State<ProtocolesScreen> {
+  // Plus besoin de AutomaticKeepAliveClientMixin car la lecture Hive est instantanée
+  final StorageService _storage = StorageService();
   String _searchQuery = '';
 
   @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      await _protocolService.loadProtocols();
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = e.toString();
-        });
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    super.build(context);
+    // 1. Lecture Sync depuis Hive (Instantané)
+    final allProtocols = _storage.getProtocols();
+    final protocolColors = context.medicalColors;
 
+    // 2. Filtrage
     List<Protocol> filteredProtocols;
     
     if (_searchQuery.isEmpty) {
-      filteredProtocols = _protocolService.protocols;
+      filteredProtocols = allProtocols;
     } else {
-      final scored = _protocolService.protocols.map((p) {
+      final scored = allProtocols.map((p) {
         double scoreTitre = StringUtils.similarity(_searchQuery, p.titre);
         double scoreDesc = StringUtils.similarity(_searchQuery, p.description) * 0.8; 
         return MapEntry(p, scoreTitre > scoreDesc ? scoreTitre : scoreDesc);
@@ -71,13 +43,11 @@ class _ProtocolesScreenState extends State<ProtocolesScreen>
       filteredProtocols = scored.map((e) => e.key).toList();
     }
 
-    final protocolColors = context.medicalColors;
-
     return Scaffold(
-      // PLUS D'APPBAR ICI (Géré par MainScreen)
+      // L'AppBar est gérée par le MainScreen, on a juste le corps ici
       body: Column(
         children: [
-          // 1. Barre de recherche (Comme Thérapeutique)
+          // 1. Barre de recherche
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
@@ -104,71 +74,72 @@ class _ProtocolesScreenState extends State<ProtocolesScreen>
           
           // 2. Liste des résultats
           Expanded(
-            child: _isLoading 
-              ? const Center(child: CircularProgressIndicator())
-              : _errorMessage != null
-                  ? Center(child: Text('Erreur: $_errorMessage'))
-                  : RefreshIndicator( // Ajout du Pull-to-Refresh pour remplacer le bouton de l'AppBar
-                      onRefresh: () async {
-                        await _protocolService.reloadProtocols();
-                        await _loadData();
-                      },
-                      child: filteredProtocols.isEmpty
-                          ? ListView( // ListView pour permettre le scroll/refresh même vide
+            child: RefreshIndicator(
+              onRefresh: () async {
+                // Le pull-to-refresh force une synchro réseau
+                await DataSyncService.syncAllData();
+                // On force la reconstruction pour réafficher les nouvelles données
+                if (mounted) setState(() {}); 
+              },
+              child: filteredProtocols.isEmpty
+                  ? ListView( // ListView permet le scroll même vide (pour le refresh)
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.5,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                SizedBox(
-                                  height: MediaQuery.of(context).size.height * 0.5,
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.search_off, size: 64, color: context.colors.outline),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          _searchQuery.isEmpty 
-                                              ? 'Aucun protocole disponible' 
-                                              : 'Aucun résultat pour "$_searchQuery"',
-                                          style: context.textTheme.bodyLarge?.copyWith(color: context.colors.onSurfaceVariant),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                Icon(Icons.search_off, size: 64, color: context.colors.outline),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _searchQuery.isEmpty 
+                                      ? (allProtocols.isEmpty 
+                                          ? 'Aucun protocole.\nTirez pour synchroniser.' 
+                                          : 'Aucun protocole disponible')
+                                      : 'Aucun résultat pour "$_searchQuery"',
+                                  textAlign: TextAlign.center,
+                                  style: context.textTheme.bodyLarge?.copyWith(color: context.colors.onSurfaceVariant),
                                 ),
                               ],
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              itemCount: filteredProtocols.length,
-                              itemBuilder: (context, index) {
-                                final protocol = filteredProtocols[index];
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  elevation: 2,
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor: protocolColors.protocolContainer,
-                                      child: Icon(Icons.description, color: protocolColors.protocolOnContainer),
-                                    ),
-                                    title: Text(
-                                      protocol.titre, 
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                                    subtitle: Text(
-                                      protocol.description, 
-                                      maxLines: 2, 
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    onTap: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => ProtocolDetailScreen(protocol: protocol),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
                             ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: filteredProtocols.length,
+                      itemBuilder: (context, index) {
+                        final protocol = filteredProtocols[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 2,
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: protocolColors.protocolContainer,
+                              child: Icon(Icons.description, color: protocolColors.protocolOnContainer),
+                            ),
+                            title: Text(
+                              protocol.titre, 
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Text(
+                              protocol.description, 
+                              maxLines: 2, 
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ProtocolDetailScreen(protocol: protocol),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
+            ),
           ),
         ],
       ),
@@ -176,7 +147,6 @@ class _ProtocolesScreenState extends State<ProtocolesScreen>
   }
 }
 
-// ... La classe ProtocolDetailScreen doit garder son AppBar car c'est un nouvel écran
 class ProtocolDetailScreen extends StatelessWidget {
   final Protocol protocol;
 

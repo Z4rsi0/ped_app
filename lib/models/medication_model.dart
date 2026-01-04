@@ -1,13 +1,31 @@
+import 'package:hive/hive.dart';
 import '../logic/dose_calculator.dart'; // Import du calculateur
+import 'hive_type_id.dart';
+
+part 'medication_model.g.dart';
 
 /// Modèle unifié de médicament pour PedApp et MedicationEditor
+@HiveType(typeId: HiveTypeId.medicament)
 class Medicament {
+  @HiveField(0)
   final String nom;
+  
+  @HiveField(1)
   final String? nomCommercial;
+  
+  @HiveField(2)
   final String galenique;
+  
+  @HiveField(3)
   final List<Indication> indications;
+  
+  @HiveField(4)
   final String? contreIndications;
+  
+  @HiveField(5)
   final String? surdosage;
+  
+  @HiveField(6)
   final String? aSavoir;
 
   Medicament({
@@ -48,8 +66,12 @@ class Medicament {
   }
 }
 
+@HiveType(typeId: HiveTypeId.indication)
 class Indication {
+  @HiveField(0)
   final String label;
+  
+  @HiveField(1)
   final List<Posologie> posologies;
 
   Indication({required this.label, required this.posologies});
@@ -72,15 +94,35 @@ class Indication {
   }
 }
 
+@HiveType(typeId: HiveTypeId.posologie)
 class Posologie {
+  @HiveField(0)
   final String voie;
+  
+  @HiveField(1)
   final double? doseKg;
+  
+  @HiveField(2)
   final double? doseKgMin;
+  
+  @HiveField(3)
   final double? doseKgMax;
+  
+  @HiveField(4)
   final List<Tranche>? tranches;
+  
+  @HiveField(5)
   final String unite;
+  
+  @HiveField(6)
   final String preparation;
-  final dynamic doseMax;
+  
+  // Hive gère mal 'dynamic' sans adapter spécifique, mais pour les types primitifs ça passe.
+  // Idéalement, on stocke tout en String si c'est ambigu.
+  @HiveField(7)
+  final dynamic doseMax; 
+  
+  @HiveField(8)
   final String? doses;
 
   Posologie({
@@ -142,15 +184,33 @@ class Posologie {
   }
 }
 
+@HiveType(typeId: HiveTypeId.tranche)
 class Tranche {
+  @HiveField(0)
   final double? poidsMin;
+  
+  @HiveField(1)
   final double? poidsMax;
+  
+  @HiveField(2)
   final double? ageMin;
+  
+  @HiveField(3)
   final double? ageMax;
+  
+  @HiveField(4)
   final double? doseKg;
+  
+  @HiveField(5)
   final double? doseKgMin;
+  
+  @HiveField(6)
   final double? doseKgMax;
+  
+  @HiveField(7)
   final String? doses;
+  
+  @HiveField(8)
   final String? unite;
 
   Tranche({

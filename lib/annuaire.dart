@@ -2,12 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'models/annuaire_model.dart';
-import 'services/data_sync_service.dart';
+import 'services/storage_service.dart';
+import 'services/data_sync_service.dart'; // Pour le refresh
 import 'theme/app_theme.dart';
-
-Annuaire _parseAnnuaire(dynamic jsonMap) {
-  return Annuaire.fromJson(jsonMap as Map<String, dynamic>);
-}
 
 class AnnuaireScreen extends StatefulWidget {
   const AnnuaireScreen({super.key});
@@ -16,79 +13,23 @@ class AnnuaireScreen extends StatefulWidget {
   State<AnnuaireScreen> createState() => _AnnuaireScreenState();
 }
 
-class _AnnuaireScreenState extends State<AnnuaireScreen>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
+class _AnnuaireScreenState extends State<AnnuaireScreen> {
+  final StorageService _storage = StorageService();
   bool isInterne = true;
-  Annuaire? annuaire;
-  bool isLoading = true;
-  final searchController = TextEditingController();
-  List<Service> filteredServices = [];
+  final TextEditingController searchController = TextEditingController();
+  String _query = '';
   Timer? _debounce;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    try {
-      final data = await DataSyncService.readAndParseJson(
-        'annuaire.json',
-        _parseAnnuaire,
-      );
-      
-      if (mounted) {
-        setState(() {
-          annuaire = data;
-          _updateFilteredServices();
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur annuaire: $e')),
-        );
-      }
-    }
-  }
-
-  void _updateFilteredServices() {
-    if (annuaire == null) return;
-    List<Service> services = isInterne ? annuaire!.interne : annuaire!.externe;
-
-    if (searchController.text.isEmpty) {
-      filteredServices = services;
-    } else {
-      final query = searchController.text.toLowerCase();
-      filteredServices = services.where((s) {
-        if (s.nom.toLowerCase().contains(query)) return true;
-        if (s.description?.toLowerCase().contains(query) ?? false) return true;
-        for (var contact in s.contacts) {
-          if (contact.label?.toLowerCase().contains(query) ?? false) return true;
-          if (contact.numero.contains(query)) return true;
-        }
-        return false;
-      }).toList();
-    }
-  }
 
   void _filterServices(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
-      if (mounted) setState(() => _updateFilteredServices());
+      if (mounted) setState(() => _query = query);
     });
   }
 
   void _toggleMode(bool interne) {
     setState(() {
       isInterne = interne;
-      _updateFilteredServices();
     });
   }
 
@@ -101,14 +42,36 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     final annuaireColors = context.medicalColors;
+    
+    // 1. Récupération instantanée
+    final annuaire = _storage.getAnnuaire();
+    List<Service> services = [];
+    if (annuaire != null) {
+      services = isInterne ? annuaire.interne : annuaire.externe;
+    }
+
+    // 2. Filtrage
+    List<Service> filteredServices;
+    if (_query.isEmpty) {
+      filteredServices = services;
+    } else {
+      final q = _query.toLowerCase();
+      filteredServices = services.where((s) {
+        if (s.nom.toLowerCase().contains(q)) return true;
+        if (s.description?.toLowerCase().contains(q) ?? false) return true;
+        for (var contact in s.contacts) {
+          if (contact.label?.toLowerCase().contains(q) ?? false) return true;
+          if (contact.numero.contains(q)) return true;
+        }
+        return false;
+      }).toList();
+    }
 
     return Scaffold(
-      // PLUS D'APPBAR ICI (Géré par MainScreen)
       body: Column(
         children: [
-          // 1. Barre de recherche (Comme Thérapeutique)
+          // 1. Barre de recherche
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
@@ -138,9 +101,44 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
 
           // 3. Liste
           Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _buildServicesList(),
+            child: RefreshIndicator(
+              onRefresh: () async {
+                 await DataSyncService.syncAllData();
+                 if(mounted) setState(() {});
+              },
+              child: filteredServices.isEmpty
+                  ? ListView(
+                      children: [
+                         SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.5,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.search_off, size: 64, color: context.colors.outline),
+                                const SizedBox(height: 16),
+                                Text(
+                                  annuaire == null 
+                                    ? 'Annuaire non chargé' 
+                                    : 'Aucun service trouvé', 
+                                  style: TextStyle(fontSize: 16, color: context.colors.onSurfaceVariant)
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      itemCount: filteredServices.length,
+                      itemBuilder: (context, index) {
+                        return ServiceCard(
+                          key: ValueKey(filteredServices[index].nom),
+                          service: filteredServices[index],
+                        );
+                      },
+                    ),
+            ),
           ),
         ],
       ),
@@ -192,32 +190,6 @@ class _AnnuaireScreenState extends State<AnnuaireScreen>
           ],
         ),
       ),
-    );
-  }
-
-  // ... (Reste des méthodes _buildServicesList, ServiceCard, ContactTile inchangées mais nécessaires au fichier)
-  Widget _buildServicesList() {
-    if (filteredServices.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 64, color: context.colors.outline),
-            const SizedBox(height: 16),
-            Text('Aucun service trouvé', style: TextStyle(fontSize: 16, color: context.colors.onSurfaceVariant)),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: filteredServices.length,
-      itemBuilder: (context, index) {
-        return ServiceCard(
-          key: ValueKey(filteredServices[index].nom),
-          service: filteredServices[index],
-        );
-      },
     );
   }
 }

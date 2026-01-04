@@ -1,13 +1,28 @@
 import 'dart:convert';
+import 'package:hive/hive.dart';
+import 'hive_type_id.dart';
+
+part 'protocol_model.g.dart';
 
 /// Modèle de protocole avec architecture flexible par blocs
-/// Chaque bloc peut être réordonné et a un type spécifique
+@HiveType(typeId: HiveTypeId.protocol)
 class Protocol {
+  @HiveField(0)
   final String titre;
+  
+  @HiveField(1)
   final String description;
+  
+  @HiveField(2)
   final String? auteur;
+  
+  @HiveField(3)
   final String? version;
+  
+  @HiveField(4)
   final DateTime? dateModification;
+  
+  @HiveField(5)
   final List<ProtocolBlock> blocs;
 
   Protocol({
@@ -51,7 +66,6 @@ class Protocol {
     return const JsonEncoder.withIndent('  ').convert(toJson());
   }
 
-  /// Génère un nom de fichier sécurisé à partir du titre
   String generateFileName() {
     String normalized = titre
         .replaceAll(RegExp(r'[àáâãäå]'), 'a')
@@ -71,23 +85,25 @@ class Protocol {
     if (sanitized.isEmpty) {
       return 'protocole_sans_nom.json';
     }
-
     return '$sanitized.json';
   }
 }
 
 /// Types de blocs disponibles
+@HiveType(typeId: HiveTypeId.blockType)
 enum BlockType {
-  section,      // Section collapsible avec titre
-  texte,        // Texte avec formatage (gras, italique, souligné)
-  tableau,      // Tableau de données
-  image,        // Image (base64 ou URL)
-  medicament,   // Référence médicament avec calcul de dose
-  formulaire,   // Formulaire interactif avec calculs (scores cliniques)
-  alerte,       // Bloc d'alerte/attention
+  @HiveField(0) section,
+  @HiveField(1) texte,
+  @HiveField(2) tableau,
+  @HiveField(3) image,
+  @HiveField(4) medicament,
+  @HiveField(5) formulaire,
+  @HiveField(6) alerte,
 }
 
 /// Bloc de protocole - classe de base
+/// Note: On n'annote pas directement l'abstract class avec un TypeId 
+/// car ce sont les instances concrètes (Enfants) qui sont stockées.
 abstract class ProtocolBlock {
   final BlockType type;
   final int ordre;
@@ -128,15 +144,31 @@ abstract class ProtocolBlock {
 }
 
 /// Bloc Section - Tuile collapsible avec sous-blocs
+@HiveType(typeId: HiveTypeId.blockSection)
 class SectionBlock extends ProtocolBlock {
+  @HiveField(0)
   final String titre;
+  
+  @HiveField(1)
   final String? temps;
+  
+  @HiveField(2)
   final bool initialementOuvert;
+  
+  @HiveField(3)
   final List<ProtocolBlock> contenu;
 
+  @HiveField(4)
+  @override
+  final int ordre;
+
+  @HiveField(5)
+  @override
+  final String? id;
+
   SectionBlock({
-    required int ordre,
-    String? id,
+    required this.ordre,
+    this.id,
     required this.titre,
     this.temps,
     this.initialementOuvert = false,
@@ -172,13 +204,25 @@ class SectionBlock extends ProtocolBlock {
 }
 
 /// Bloc Texte - Texte avec formatage
+@HiveType(typeId: HiveTypeId.blockTexte)
 class TexteBlock extends ProtocolBlock {
+  @HiveField(0)
   final String contenu;
+  
+  @HiveField(1)
   final TexteFormat? format;
 
+  @HiveField(2)
+  @override
+  final int ordre;
+
+  @HiveField(3)
+  @override
+  final String? id;
+
   TexteBlock({
-    required int ordre,
-    String? id,
+    required this.ordre,
+    this.id,
     required this.contenu,
     this.format,
   }) : super(type: BlockType.texte, ordre: ordre, id: id);
@@ -207,12 +251,13 @@ class TexteBlock extends ProtocolBlock {
 }
 
 /// Format de texte
+@HiveType(typeId: HiveTypeId.blockTexteFormat)
 class TexteFormat {
-  final bool gras;
-  final bool italique;
-  final bool souligne;
-  final String? couleur;
-  final double? taillePolicePx;
+  @HiveField(0) final bool gras;
+  @HiveField(1) final bool italique;
+  @HiveField(2) final bool souligne;
+  @HiveField(3) final String? couleur;
+  @HiveField(4) final double? taillePolicePx;
 
   TexteFormat({
     this.gras = false,
@@ -244,15 +289,31 @@ class TexteFormat {
 }
 
 /// Bloc Tableau - Tableau de données
+@HiveType(typeId: HiveTypeId.blockTableau)
 class TableauBlock extends ProtocolBlock {
+  @HiveField(0)
   final String? titre;
+  
+  @HiveField(1)
   final List<String> colonnes;
+  
+  @HiveField(2)
   final List<List<String>> lignes;
+  
+  @HiveField(3)
   final bool avecEntete;
 
+  @HiveField(4)
+  @override
+  final int ordre;
+
+  @HiveField(5)
+  @override
+  final String? id;
+
   TableauBlock({
-    required int ordre,
-    String? id,
+    required this.ordre,
+    this.id,
     this.titre,
     required this.colonnes,
     required this.lignes,
@@ -292,15 +353,31 @@ class TableauBlock extends ProtocolBlock {
 }
 
 /// Bloc Image - Image embarquée ou URL
+@HiveType(typeId: HiveTypeId.blockImage)
 class ImageBlock extends ProtocolBlock {
+  @HiveField(0)
   final String source; // URL ou base64
+  
+  @HiveField(1)
   final bool estBase64;
+  
+  @HiveField(2)
   final String? legende;
+  
+  @HiveField(3)
   final double? largeurPourcent;
 
+  @HiveField(4)
+  @override
+  final int ordre;
+
+  @HiveField(5)
+  @override
+  final String? id;
+
   ImageBlock({
-    required int ordre,
-    String? id,
+    required this.ordre,
+    this.id,
     required this.source,
     this.estBase64 = false,
     this.legende,
@@ -333,15 +410,31 @@ class ImageBlock extends ProtocolBlock {
 }
 
 /// Bloc Médicament - Référence vers un médicament avec calcul de dose
+@HiveType(typeId: HiveTypeId.blockMedicament)
 class MedicamentBlock extends ProtocolBlock {
+  @HiveField(0)
   final String nomMedicament;
+  
+  @HiveField(1)
   final String indication;
+  
+  @HiveField(2)
   final String? voie;
+  
+  @HiveField(3)
   final String? commentaire;
 
+  @HiveField(4)
+  @override
+  final int ordre;
+
+  @HiveField(5)
+  @override
+  final String? id;
+
   MedicamentBlock({
-    required int ordre,
-    String? id,
+    required this.ordre,
+    this.id,
     required this.nomMedicament,
     required this.indication,
     this.voie,
@@ -374,17 +467,35 @@ class MedicamentBlock extends ProtocolBlock {
   }
 }
 
-/// Bloc Formulaire - Formulaire interactif avec calculs (scores cliniques)
+/// Bloc Formulaire - Formulaire interactif avec calculs
+@HiveType(typeId: HiveTypeId.blockFormulaire)
 class FormulaireBlock extends ProtocolBlock {
+  @HiveField(0)
   final String titre;
+  
+  @HiveField(1)
   final String? description;
+  
+  @HiveField(2)
   final List<FormulaireChamp> champs;
+  
+  @HiveField(3)
   final String? formuleCalcul;
+  
+  @HiveField(4)
   final List<FormulaireInterpretation>? interpretations;
 
+  @HiveField(5)
+  @override
+  final int ordre;
+
+  @HiveField(6)
+  @override
+  final String? id;
+
   FormulaireBlock({
-    required int ordre,
-    String? id,
+    required this.ordre,
+    this.id,
     required this.titre,
     this.description,
     required this.champs,
@@ -429,24 +540,40 @@ class FormulaireBlock extends ProtocolBlock {
   }
 }
 
-/// Type de champ de formulaire
+@HiveType(typeId: HiveTypeId.champType)
 enum ChampType {
-  nombre,
-  selection,
-  checkbox,
-  radio,
+  @HiveField(0) nombre,
+  @HiveField(1) selection,
+  @HiveField(2) checkbox,
+  @HiveField(3) radio,
 }
 
 /// Champ de formulaire
+@HiveType(typeId: HiveTypeId.blockFormulaireChamp)
 class FormulaireChamp {
+  @HiveField(0)
   final String id;
+  
+  @HiveField(1)
   final String label;
+  
+  @HiveField(2)
   final ChampType type;
+  
+  @HiveField(3)
   final List<FormulaireOption>? options;
+  
+  @HiveField(4)
   final num? min;
+  
+  @HiveField(5)
   final num? max;
+  
+  @HiveField(6)
   final num? defaut;
-  final num? points; // Points attribués si checkbox cochée
+  
+  @HiveField(7)
+  final num? points;
 
   FormulaireChamp({
     required this.id,
@@ -496,8 +623,12 @@ class FormulaireChamp {
 }
 
 /// Option de sélection
+@HiveType(typeId: HiveTypeId.blockFormulaireOption)
 class FormulaireOption {
+  @HiveField(0)
   final String label;
+  
+  @HiveField(1)
   final num valeur;
 
   FormulaireOption({
@@ -521,12 +652,22 @@ class FormulaireOption {
 }
 
 /// Interprétation du score
+@HiveType(typeId: HiveTypeId.blockFormulaireInterpretation)
 class FormulaireInterpretation {
+  @HiveField(0)
   final num min;
+  
+  @HiveField(1)
   final num max;
+  
+  @HiveField(2)
   final String texte;
+  
+  @HiveField(3)
   final String? couleur;
-  final String? niveau; // ex: "faible", "modere", "eleve", "critique"
+  
+  @HiveField(4)
+  final String? niveau; 
 
   FormulaireInterpretation({
     required this.min,
@@ -558,13 +699,25 @@ class FormulaireInterpretation {
 }
 
 /// Bloc Alerte - Bloc d'attention/warning
+@HiveType(typeId: HiveTypeId.blockAlerte)
 class AlerteBlock extends ProtocolBlock {
+  @HiveField(0)
   final String contenu;
+  
+  @HiveField(1)
   final AlerteNiveau niveau;
 
+  @HiveField(2)
+  @override
+  final int ordre;
+
+  @HiveField(3)
+  @override
+  final String? id;
+
   AlerteBlock({
-    required int ordre,
-    String? id,
+    required this.ordre,
+    this.id,
     required this.contenu,
     this.niveau = AlerteNiveau.attention,
   }) : super(type: BlockType.alerte, ordre: ordre, id: id);
@@ -597,9 +750,10 @@ class AlerteBlock extends ProtocolBlock {
 }
 
 /// Niveaux d'alerte
+@HiveType(typeId: HiveTypeId.alerteNiveau)
 enum AlerteNiveau {
-  info,
-  attention,
-  danger,
-  critique,
+  @HiveField(0) info,
+  @HiveField(1) attention,
+  @HiveField(2) danger,
+  @HiveField(3) critique,
 }

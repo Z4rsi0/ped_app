@@ -1,290 +1,175 @@
-import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart'; // Pour compute
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../models/medication_model.dart';
+import '../models/protocol_model.dart';
+import '../models/annuaire_model.dart';
+import 'storage_service.dart';
 
-/// Service de synchronisation des données depuis GitHub
 class DataSyncService {
   static const String githubApiBase = 'https://api.github.com/repos/Z4rsi0/ped_app_data/contents';
-  static const String githubOwner = 'Z4rsi0';
-  static const String githubRepo = 'ped_app_data';
   static const String githubBranch = 'main';
   
-  /// Fichiers "Core" toujours présents
-  static const Map<String, String> _staticFiles = {
-    'assets/medicaments_pediatrie.json': 'assets/medicaments_pediatrie.json',
-    'assets/annuaire.json': 'assets/annuaire.json',
-  };
+  // Chemins GitHub
+  static const String pathMedicaments = 'medicaments_pediatrie.json';
+  static const String pathAnnuaire = 'annuaire.json';
+  static const String dirProtocoles = 'protocoles'; 
 
-  /// Synchronise tous les fichiers (Statiques + Protocoles dynamiques)
+  /// Stratégie "Online-First" : On tente GitHub, on stocke dans Hive.
   static Future<SyncResult> syncAllData() async {
     int success = 0;
     int failed = 0;
-    int upToDate = 0;
     List<String> errors = [];
-
-    // 1. Construire la liste complète des fichiers à synchroniser
-    Map<String, String> filesToSync = Map.from(_staticFiles);
-
-    // 2. Récupérer la liste dynamique des protocoles depuis GitHub
-    if (await hasInternetConnection()) {
-      try {
-        debugPrint('🔍 Recherche des protocoles sur GitHub...');
-        final dynamicProtocols = await _fetchRemoteProtocolsList();
-        filesToSync.addAll(dynamicProtocols);
-        debugPrint('📄 ${dynamicProtocols.length} protocoles trouvés sur le serveur.');
-      } catch (e) {
-        debugPrint('⚠️ Impossible de lister les protocoles distants : $e');
-        errors.add('Liste protocoles: $e');
-        // On continue avec les fichiers statiques et ce qu'on a déjà en local
-      }
+    
+    final storage = StorageService();
+    
+    // 1. Vérification réseau
+    if (!await hasInternetConnection()) {
+      return SyncResult(
+        success: 0, 
+        failed: 0, 
+        errors: [], 
+        isOffline: true
+      );
     }
 
-    // 3. Lancer la synchronisation pour chaque fichier
-    for (var entry in filesToSync.entries) {
-      try {
-        final result = await _downloadFile(entry.key, entry.value);
-        if (result == DownloadResult.success) {
-          success++;
-        } else if (result == DownloadResult.upToDate) {
-          upToDate++;
-        } else {
-          failed++;
-          errors.add(entry.key);
-        }
-      } catch (e) {
-        failed++;
-        errors.add('${entry.key}: $e');
-      }
-    }
+    debugPrint('🌍 Connexion détectée, synchronisation Cloud...');
 
-    // 4. Nettoyage (Optionnel) : Supprimer les protocoles locaux qui n'existent plus sur GitHub
-    // (Implémentation basique : on ne supprime rien pour sécurité hors ligne pour l'instant)
-
-    return SyncResult(
-      success: success,
-      failed: failed,
-      upToDate: upToDate,
-      errors: errors,
-      totalFiles: filesToSync.length,
-    );
-  }
-
-  /// Récupère la liste des fichiers JSON dans assets/protocoles via l'API GitHub
-  static Future<Map<String, String>> _fetchRemoteProtocolsList() async {
-    final Map<String, String> protocols = {};
-    const protocolPath = 'assets/protocoles';
-    
-    final apiUrl = '$githubApiBase/$protocolPath?ref=$githubBranch';
-    
-    final headers = <String, String>{
-      'Accept': 'application/vnd.github.v3+json',
-    };
-    
-    final token = dotenv.env['GITHUB_TOKEN'];
-    if (token != null && token.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $token';
-    }
-
-    final response = await http.get(Uri.parse(apiUrl), headers: headers)
-        .timeout(const Duration(seconds: 10));
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      
-      for (var item in data) {
-        if (item['type'] == 'file' && item['name'].toString().endsWith('.json')) {
-          final path = item['path'] as String;
-          // Clé locale = Chemin distant pour simplifier
-          protocols[path] = path; 
-        }
-      }
-    } else {
-      throw Exception('API GitHub erreur ${response.statusCode}');
-    }
-    
-    return protocols;
-  }
-
-  static Future<DownloadResult> _downloadFile(String relativePath, String githubPath) async {
+    // A. Médicaments (Fichier unique)
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final shaKey = 'sha_$relativePath';
-      final localSha = prefs.getString(shaKey);
+      final meds = await _fetchAndParse<List<Medicament>>(
+        pathMedicaments, 
+        (json) => (json as List).map((e) => Medicament.fromJson(e)).toList()
+      );
+      if (meds != null) {
+        await storage.saveMedicaments(meds);
+        success++;
+      }
+    } catch (e) {
+      failed++;
+      errors.add('Médicaments: $e');
+    }
 
-      final apiUrl = '$githubApiBase/$githubPath?ref=$githubBranch';
-      
-      final headers = <String, String>{
-        'Accept': 'application/vnd.github.v3+json',
-      };
+    // B. Annuaire (Fichier unique)
+    try {
+      final annuaire = await _fetchAndParse<Annuaire>(
+        pathAnnuaire,
+        (json) => Annuaire.fromJson(json),
+      );
+      if (annuaire != null) {
+        await storage.saveAnnuaire(annuaire);
+        success++;
+      }
+    } catch (e) {
+      failed++;
+      errors.add('Annuaire: $e');
+    }
+
+    // C. Protocoles (Dossier dynamique sur GitHub)
+    try {
+      final protocols = await _syncProtocolsFromGithub();
+      if (protocols.isNotEmpty) {
+        await storage.saveProtocols(protocols);
+        success++;
+      }
+    } catch (e) {
+      failed++;
+      errors.add('Protocoles: $e');
+    }
+
+    return SyncResult(success: success, failed: failed, errors: errors);
+  }
+
+  // --- LOGIQUE GITHUB (inchangée) ---
+
+  static Future<T?> _fetchAndParse<T>(String path, T Function(dynamic) parser) async {
+    try {
+      final url = '$githubApiBase/$path?ref=$githubBranch';
+      final headers = {'Accept': 'application/vnd.github.v3.raw'}; 
       
       final token = dotenv.env['GITHUB_TOKEN'];
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
+      if (token != null) headers['Authorization'] = 'Bearer $token';
+
+      final response = await http.get(Uri.parse(url), headers: headers);
+      
+      if (response.statusCode == 200) {
+        return await compute((String body) {
+          final json = jsonDecode(body);
+          return parser(json);
+        }, response.body);
       }
-      
-      final apiResponse = await http.get(
-        Uri.parse(apiUrl),
-        headers: headers,
-      ).timeout(const Duration(seconds: 10));
-
-      if (apiResponse.statusCode != 200) return DownloadResult.failed;
-
-      final apiData = json.decode(apiResponse.body);
-      final remoteSha = apiData['sha'] as String?;
-      final downloadUrl = apiData['download_url'] as String?;
-
-      if (remoteSha == null || downloadUrl == null) return DownloadResult.failed;
-
-      if (localSha == remoteSha) {
-        // Vérifier quand même que le fichier existe physiquement
-        if (await fileExistsLocally(relativePath)) {
-          return DownloadResult.upToDate;
-        }
-      }
-
-      final contentResponse = await http.get(
-        Uri.parse(downloadUrl),
-        headers: {'Cache-Control': 'no-cache'},
-      ).timeout(const Duration(seconds: 15));
-
-      if (contentResponse.statusCode != 200) return DownloadResult.failed;
-
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/$relativePath');
-      
-      await file.parent.create(recursive: true);
-      await file.writeAsString(contentResponse.body);
-      await prefs.setString(shaKey, remoteSha);
-      
-      return DownloadResult.success;
+      return null;
     } catch (e) {
-      debugPrint('❌ Exception _downloadFile ($relativePath): $e');
-      return DownloadResult.failed;
+      debugPrint('❌ Erreur Fetch $path: $e');
+      rethrow;
     }
   }
 
-  /// Lit un fichier (priorité: local > assets embarqués)
-  static Future<String> readFile(String assetPath) async {
-    if (!assetPath.startsWith('assets/')) {
-      assetPath = 'assets/$assetPath';
-    }
-
-    // 1. Essai lecture locale (Données mises à jour)
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/$assetPath');
-      
-      if (await file.exists()) {
-        return await file.readAsString();
-      }
-    } catch (e) {
-      debugPrint('⚠️ Erreur lecture locale de $assetPath: $e');
-    }
-
-    // 2. Fallback assets embarqués (Données "usine")
-    try {
-      return await rootBundle.loadString(assetPath);
-    } catch (e) {
-      // Si c'est un fichier dynamique (nouveau protocole), il n'est pas dans les assets
-      debugPrint('ℹ️ Fichier non trouvé dans les assets (normal si nouveau protocole): $assetPath');
-      throw Exception('Fichier introuvable: $assetPath');
-    }
-  }
-
-  /// Liste tous les fichiers disponibles localement dans un dossier
-  static Future<List<String>> listLocalFiles(String directoryPath) async {
-    List<String> files = [];
+  static Future<List<Protocol>> _syncProtocolsFromGithub() async {
+    final List<Protocol> protocols = [];
     
-    // 1. Scanner le dossier local (Documents)
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final localDir = Directory('${dir.path}/$directoryPath');
+    final url = '$githubApiBase/$dirProtocoles?ref=$githubBranch';
+    final headers = {'Accept': 'application/vnd.github.v3+json'};
+    final token = dotenv.env['GITHUB_TOKEN'];
+    if (token != null) headers['Authorization'] = 'Bearer $token';
+
+    final response = await http.get(Uri.parse(url), headers: headers);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> files = jsonDecode(response.body);
       
-      if (await localDir.exists()) {
-        final entities = localDir.listSync();
-        for (var entity in entities) {
-          if (entity is File && entity.path.endsWith('.json')) {
-            // Extraire le nom de fichier
-            files.add(entity.uri.pathSegments.last);
+      for (var file in files) {
+        if (file['name'].toString().endsWith('.json')) {
+          final downloadUrl = file['download_url'];
+          if (downloadUrl != null) {
+            try {
+               final pResponse = await http.get(Uri.parse(downloadUrl));
+               if (pResponse.statusCode == 200) {
+                 final protocol = await compute(_parseProtocol, pResponse.body);
+                 protocols.add(protocol);
+               }
+            } catch (e) {
+              debugPrint('⚠️ Erreur download ${file['name']}: $e');
+            }
           }
         }
       }
-    } catch (e) {
-      debugPrint('Erreur scan local: $e');
     }
-
-    // 2. Scanner les assets (Manifest)
-    // C'est plus complexe en Flutter release, mais pour les protocoles dynamiques,
-    // on compte principalement sur le dossier local ou une liste connue.
-    // Pour l'instant, on se base sur la découverte locale post-sync.
-    
-    return files.toSet().toList(); // Uniques
+    return protocols;
   }
 
-  static Future<T> readAndParseJson<T>(
-    String assetPath,
-    T Function(dynamic json) parser,
-  ) async {
-    try {
-      final jsonString = await readFile(assetPath);
-      return await compute((String content) {
-        final decoded = jsonDecode(content);
-        return parser(decoded);
-      }, jsonString);
-    } catch (e) {
-      debugPrint('❌ Erreur parsing JSON pour $assetPath: $e');
-      throw Exception('Impossible de charger les données: $e');
-    }
-  }
+  // --- PARSERS ---
+  static Protocol _parseProtocol(String source) => Protocol.fromJson(jsonDecode(source));
 
   static Future<bool> hasInternetConnection() async {
     try {
-      final result = await http.get(Uri.parse('https://www.google.com')).timeout(
-        const Duration(seconds: 3),
-      );
+      final result = await http.get(Uri.parse('https://www.google.com')).timeout(const Duration(seconds: 3));
       return result.statusCode == 200;
     } catch (e) {
       return false;
     }
   }
-  
-  static Future<bool> fileExistsLocally(String assetPath) async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/$assetPath');
-    return await file.exists();
-  }
 }
-
-enum DownloadResult { success, upToDate, failed }
 
 class SyncResult {
   final int success;
   final int failed;
-  final int upToDate;
   final List<String> errors;
-  final int totalFiles;
+  final bool isOffline;
 
   SyncResult({
-    required this.success,
-    required this.failed,
-    required this.upToDate,
+    required this.success, 
+    required this.failed, 
     required this.errors,
-    required this.totalFiles,
+    this.isOffline = false,
   });
-
-  bool get hasErrors => failed > 0;
   
+  bool get hasErrors => failed > 0;
   String get message {
-    if (failed == 0) {
-      return '✅ Données à jour';
-    } else {
-      return '⚠️ Mise à jour partielle ($failed erreurs)';
-    }
+    if (isOffline) return 'Mode hors ligne (Données locales)';
+    if (failed == 0) return '✅ Données à jour';
+    return '⚠️ Mise à jour partielle ($failed erreurs)';
   }
 }

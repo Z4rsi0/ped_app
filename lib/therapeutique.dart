@@ -5,20 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/weight_provider.dart';
 import 'widgets/global_weight_selector.dart';
-import 'services/data_sync_service.dart';
+import 'services/storage_service.dart';
+import 'services/data_sync_service.dart'; // Pour le refresh si besoin
 import 'models/medication_model.dart';
 import 'utils/string_utils.dart';
-import 'theme/app_theme.dart'; // Import du Design System
-
-// Fonction de parsing isolée
-List<Medicament> _parseMedicamentsList(dynamic jsonList) {
-  if (jsonList is List) {
-    final list = jsonList.map((json) => Medicament.fromJson(json)).toList();
-    list.sort((a, b) => a.nom.toLowerCase().compareTo(b.nom.toLowerCase()));
-    return list;
-  }
-  return [];
-}
+import 'theme/app_theme.dart';
 
 class TherapeutiqueScreen extends StatefulWidget {
   const TherapeutiqueScreen({super.key});
@@ -27,76 +18,17 @@ class TherapeutiqueScreen extends StatefulWidget {
   State<TherapeutiqueScreen> createState() => _TherapeutiqueScreenState();
 }
 
-class _TherapeutiqueScreenState extends State<TherapeutiqueScreen>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  List<Medicament> medicaments = [];
-  List<Medicament> filteredMedicaments = [];
-  final searchController = TextEditingController();
-  bool isLoading = true;
+class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
+  final StorageService _storage = StorageService();
+  final TextEditingController searchController = TextEditingController();
+  
+  String _query = '';
   Timer? _debounce;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    try {
-      final data = await DataSyncService.readAndParseJson(
-        'medicaments_pediatrie.json',
-        _parseMedicamentsList,
-      );
-
-      if (mounted) {
-        setState(() {
-          medicaments = data;
-          filteredMedicaments = medicaments;
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Erreur: Impossible de charger les médicaments'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  void _filterMedicaments(String query) {
+  void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-
     _debounce = Timer(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
-
-      setState(() {
-        if (query.isEmpty) {
-          filteredMedicaments = medicaments;
-        } else {
-          final scoredList = medicaments.map((med) {
-            double scoreNom = StringUtils.similarity(query, med.nom);
-            double scoreComm = 0.0;
-            if (med.nomCommercial != null) {
-              scoreComm = StringUtils.similarity(query, med.nomCommercial!);
-            }
-            return MapEntry(med, scoreNom > scoreComm ? scoreNom : scoreComm);
-          }).toList();
-
-          final relevant =
-              scoredList.where((entry) => entry.value > 0.3).toList();
-          relevant.sort((a, b) => b.value.compareTo(a.value));
-
-          filteredMedicaments = relevant.map((entry) => entry.key).toList();
-        }
-      });
+      if (mounted) setState(() => _query = query);
     });
   }
 
@@ -109,8 +41,29 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     final medColors = context.medicalColors;
+    
+    // 1. Récupération instantanée depuis Hive
+    final allMeds = _storage.getMedicaments();
+    
+    // 2. Filtrage
+    List<Medicament> filteredList;
+    if (_query.isEmpty) {
+      filteredList = allMeds;
+    } else {
+      final scoredList = allMeds.map((med) {
+        double scoreNom = StringUtils.similarity(_query, med.nom);
+        double scoreComm = 0.0;
+        if (med.nomCommercial != null) {
+          scoreComm = StringUtils.similarity(_query, med.nomCommercial!);
+        }
+        return MapEntry(med, scoreNom > scoreComm ? scoreNom : scoreComm);
+      }).toList();
+
+      final relevant = scoredList.where((entry) => entry.value > 0.3).toList();
+      relevant.sort((a, b) => b.value.compareTo(a.value));
+      filteredList = relevant.map((entry) => entry.key).toList();
+    }
 
     return Scaffold(
       body: Column(
@@ -129,7 +82,7 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen>
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           searchController.clear();
-                          _filterMedicaments('');
+                          setState(() => _query = '');
                         },
                       )
                     : null,
@@ -138,80 +91,87 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen>
                   borderSide: BorderSide.none,
                 ),
               ),
-              onChanged: _filterMedicaments,
+              onChanged: _onSearchChanged,
             ),
           ),
           Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _buildMedicamentsList(medColors),
+            child: RefreshIndicator(
+               onRefresh: () async {
+                await DataSyncService.syncAllData();
+                if (mounted) setState(() {});
+              },
+              child: filteredList.isEmpty
+                  ? ListView(
+                      children: [
+                         SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.5,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.search_off, size: 64, color: context.colors.outline),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _query.isEmpty 
+                                    ? (allMeds.isEmpty ? 'Aucune donnée locale' : 'Aucun médicament') 
+                                    : 'Aucun résultat trouvé',
+                                  style: context.textTheme.bodyLarge?.copyWith(color: context.colors.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      itemCount: filteredList.length,
+                      itemBuilder: (context, index) {
+                        final med = filteredList[index];
+                        return Card(
+                          key: ValueKey(med.nom),
+                          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: medColors.medicamentContainer,
+                              child: Icon(Icons.medication, color: medColors.medicamentOnContainer),
+                            ),
+                            title: Text(
+                              med.nom,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (med.nomCommercial != null && med.nomCommercial!.isNotEmpty)
+                                  Text(
+                                    med.nomCommercial!,
+                                    style: TextStyle(
+                                      color: medColors.medicamentPrimary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                Text(
+                                  med.galenique,
+                                  style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MedicamentDetailScreen(medicament: med),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildMedicamentsList(MedicalColors medColors) {
-    if (filteredMedicaments.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 64, color: context.colors.outline),
-            const SizedBox(height: 16),
-            Text(
-              'Aucun médicament trouvé',
-              style: context.textTheme.bodyLarge?.copyWith(color: context.colors.onSurfaceVariant),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: filteredMedicaments.length,
-      itemBuilder: (context, index) {
-        final med = filteredMedicaments[index];
-        return Card(
-          key: ValueKey(med.nom),
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: medColors.medicamentContainer,
-              child: Icon(Icons.medication, color: medColors.medicamentOnContainer),
-            ),
-            title: Text(
-              med.nom,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (med.nomCommercial != null && med.nomCommercial!.isNotEmpty)
-                  Text(
-                    med.nomCommercial!,
-                    style: TextStyle(
-                      color: medColors.medicamentPrimary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                Text(
-                  med.galenique,
-                  style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 12),
-                ),
-              ],
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => MedicamentDetailScreen(medicament: med),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -292,7 +252,7 @@ class MedicamentDetailScreen extends StatelessWidget {
                   icon: Icons.info,
                   title: "Surdosage",
                   content: medicament.surdosage!,
-                  color: medColors.protocolPrimary, // Orange pour attention
+                  color: medColors.protocolPrimary,
                   bgColor: medColors.protocolContainer,
                 ),
               ],
@@ -304,7 +264,7 @@ class MedicamentDetailScreen extends StatelessWidget {
                   icon: Icons.lightbulb,
                   title: "À savoir",
                   content: medicament.aSavoir!,
-                  color: medColors.annuairePrimary, // Vert pour info
+                  color: medColors.annuairePrimary,
                   bgColor: medColors.annuaireContainer,
                 ),
               ],
@@ -326,7 +286,7 @@ class MedicamentDetailScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: bgColor.withValues(alpha: 0.2), // Légère transparence pour le fond
+        color: bgColor.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
@@ -379,7 +339,7 @@ class _IndicationCardState extends State<IndicationCard> {
 
   @override
   Widget build(BuildContext context) {
-    final annuaireColors = context.medicalColors; // Vert sémantique
+    final annuaireColors = context.medicalColors;
     
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -426,7 +386,7 @@ class _IndicationCardState extends State<IndicationCard> {
   }
 
   Widget _buildPosologieCard(BuildContext context, Posologie posologie) {
-    final calcColors = context.medicalColors; // Violet sémantique
+    final calcColors = context.medicalColors;
     final surfaceColor = context.colors.surface;
 
     return Consumer<WeightProvider>(
@@ -460,7 +420,7 @@ class _IndicationCardState extends State<IndicationCard> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: calcColors.medicamentContainer, // Rappel bleu médicament
+                  color: calcColors.medicamentContainer,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -473,7 +433,7 @@ class _IndicationCardState extends State<IndicationCard> {
               ),
               const SizedBox(height: 12),
               
-              // Zone de calcul (Violet)
+              // Zone de calcul
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -494,7 +454,7 @@ class _IndicationCardState extends State<IndicationCard> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: calcColors.calculusOnContainer, // Contraste assuré
+                              color: calcColors.calculusOnContainer,
                             ),
                           ),
                           if (doseParKg.isNotEmpty)

@@ -1,6 +1,15 @@
+import 'package:hive/hive.dart';
+import 'hive_type_id.dart';
+
+part 'annuaire_model.g.dart';
+
 // Modèle de données pour l'annuaire
+@HiveType(typeId: HiveTypeId.annuaire)
 class Annuaire {
+  @HiveField(0)
   final List<Service> interne;
+  
+  @HiveField(1)
   final List<Service> externe;
 
   Annuaire({
@@ -22,9 +31,15 @@ class Annuaire {
   }
 }
 
+@HiveType(typeId: HiveTypeId.service)
 class Service {
+  @HiveField(0)
   final String nom;
+  
+  @HiveField(1)
   final List<Contact> contacts;
+  
+  @HiveField(2)
   final String? description;
 
   Service({
@@ -45,9 +60,15 @@ class Service {
   }
 }
 
+@HiveType(typeId: HiveTypeId.contact)
 class Contact {
+  @HiveField(0)
   final String? label;
+  
+  @HiveField(1)
   final String numero;
+  
+  @HiveField(2)
   final String? type; // "fixe", "mobile", "fax", "bip"
 
   Contact({
