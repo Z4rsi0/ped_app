@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -12,12 +11,11 @@ class DataSyncService {
   static const String githubApiBase = 'https://api.github.com/repos/Z4rsi0/ped_app_data/contents';
   static const String githubBranch = 'main';
   
-  // Chemins GitHub
-  static const String pathMedicaments = 'medicaments_pediatrie.json';
-  static const String pathAnnuaire = 'annuaire.json';
-  static const String dirProtocoles = 'protocoles'; 
+  // Chemins GitHub (avec le dossier assets/)
+  static const String pathMedicaments = 'assets/medicaments_pediatrie.json';
+  static const String pathAnnuaire = 'assets/annuaire.json';
+  static const String dirProtocoles = 'assets/protocoles'; 
 
-  /// Stratégie "Online-First" : On tente GitHub, on stocke dans Hive.
   static Future<SyncResult> syncAllData() async {
     int success = 0;
     int failed = 0;
@@ -27,17 +25,12 @@ class DataSyncService {
     
     // 1. Vérification réseau
     if (!await hasInternetConnection()) {
-      return SyncResult(
-        success: 0, 
-        failed: 0, 
-        errors: [], 
-        isOffline: true
-      );
+      return SyncResult(success: 0, failed: 0, errors: [], isOffline: true);
     }
 
-    debugPrint('🌍 Connexion détectée, synchronisation Cloud...');
+    debugPrint('🌍 Synchronisation Cloud en cours...');
 
-    // A. Médicaments (Fichier unique)
+    // A. Médicaments
     try {
       final meds = await _fetchAndParse<List<Medicament>>(
         pathMedicaments, 
@@ -50,9 +43,10 @@ class DataSyncService {
     } catch (e) {
       failed++;
       errors.add('Médicaments: $e');
+      debugPrint('❌ Erreur Médicaments: $e');
     }
 
-    // B. Annuaire (Fichier unique)
+    // B. Annuaire
     try {
       final annuaire = await _fetchAndParse<Annuaire>(
         pathAnnuaire,
@@ -65,9 +59,10 @@ class DataSyncService {
     } catch (e) {
       failed++;
       errors.add('Annuaire: $e');
+      debugPrint('❌ Erreur Annuaire: $e');
     }
 
-    // C. Protocoles (Dossier dynamique sur GitHub)
+    // C. Protocoles
     try {
       final protocols = await _syncProtocolsFromGithub();
       if (protocols.isNotEmpty) {
@@ -77,21 +72,21 @@ class DataSyncService {
     } catch (e) {
       failed++;
       errors.add('Protocoles: $e');
+      debugPrint('❌ Erreur Protocoles: $e');
     }
 
+    debugPrint('✅ Synchronisation terminée : $success succès, $failed échecs.');
     return SyncResult(success: success, failed: failed, errors: errors);
   }
 
-  // --- LOGIQUE GITHUB (inchangée) ---
-
   static Future<T?> _fetchAndParse<T>(String path, T Function(dynamic) parser) async {
-    try {
-      final url = '$githubApiBase/$path?ref=$githubBranch';
-      final headers = {'Accept': 'application/vnd.github.v3.raw'}; 
-      
-      final token = dotenv.env['GITHUB_TOKEN'];
-      if (token != null) headers['Authorization'] = 'Bearer $token';
+    final url = '$githubApiBase/$path?ref=$githubBranch';
+    final headers = {'Accept': 'application/vnd.github.v3.raw'};
+    
+    final token = dotenv.env['GITHUB_TOKEN'];
+    if (token != null) headers['Authorization'] = 'Bearer $token';
 
+    try {
       final response = await http.get(Uri.parse(url), headers: headers);
       
       if (response.statusCode == 200) {
@@ -102,16 +97,15 @@ class DataSyncService {
       }
       return null;
     } catch (e) {
-      debugPrint('❌ Erreur Fetch $path: $e');
       rethrow;
     }
   }
 
   static Future<List<Protocol>> _syncProtocolsFromGithub() async {
     final List<Protocol> protocols = [];
-    
     final url = '$githubApiBase/$dirProtocoles?ref=$githubBranch';
     final headers = {'Accept': 'application/vnd.github.v3+json'};
+    
     final token = dotenv.env['GITHUB_TOKEN'];
     if (token != null) headers['Authorization'] = 'Bearer $token';
 
@@ -121,7 +115,8 @@ class DataSyncService {
       final List<dynamic> files = jsonDecode(response.body);
       
       for (var file in files) {
-        if (file['name'].toString().endsWith('.json')) {
+        final name = file['name'].toString();
+        if (name.endsWith('.json')) {
           final downloadUrl = file['download_url'];
           if (downloadUrl != null) {
             try {
@@ -131,7 +126,7 @@ class DataSyncService {
                  protocols.add(protocol);
                }
             } catch (e) {
-              debugPrint('⚠️ Erreur download ${file['name']}: $e');
+              debugPrint('⚠️ Erreur download $name: $e');
             }
           }
         }
@@ -140,7 +135,6 @@ class DataSyncService {
     return protocols;
   }
 
-  // --- PARSERS ---
   static Protocol _parseProtocol(String source) => Protocol.fromJson(jsonDecode(source));
 
   static Future<bool> hasInternetConnection() async {
@@ -168,8 +162,8 @@ class SyncResult {
   
   bool get hasErrors => failed > 0;
   String get message {
-    if (isOffline) return 'Mode hors ligne (Données locales)';
-    if (failed == 0) return '✅ Données à jour';
-    return '⚠️ Mise à jour partielle ($failed erreurs)';
+    if (isOffline) return 'Mode hors ligne';
+    if (failed == 0) return 'Données à jour';
+    return 'Mise à jour partielle ($failed erreurs)';
   }
 }
