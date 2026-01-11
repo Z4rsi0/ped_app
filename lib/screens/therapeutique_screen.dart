@@ -31,16 +31,21 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
   }
 
   @override
+  void dispose() {
+    _debounce?.cancel();
+    searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final medColors = context.medicalColors;
     
-    // 🔥 REACTIVITÉ HIVE
     return ValueListenableBuilder<Box<Medicament>>(
       valueListenable: _storage.medicamentListenable,
       builder: (context, box, _) {
         final allMeds = box.values.toList();
         
-        // Filtrage
         List<Medicament> filteredList;
         if (_query.isEmpty) {
           filteredList = allMeds;
@@ -63,11 +68,22 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
                 controller: searchController,
                 decoration: InputDecoration(
                   labelText: "Rechercher un médicament",
-                  prefixIcon: const Icon(Icons.search),
+                  prefixIcon: Icon(Icons.search, color: context.colors.onSurfaceVariant),
                   fillColor: context.colors.surfaceContainerHigh,
                   filled: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  suffixIcon: _query.isNotEmpty ? IconButton(icon: const Icon(Icons.clear), onPressed: () { searchController.clear(); setState(() => _query = ''); }) : null,
+                  suffixIcon: _query.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            searchController.clear();
+                            setState(() => _query = '');
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
                 onChanged: _onSearchChanged,
               ),
@@ -82,7 +98,9 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
                             height: MediaQuery.of(context).size.height * 0.5,
                             child: Center(
                               child: Text(
-                                _query.isEmpty ? (allMeds.isEmpty ? 'Chargement...' : 'Aucun médicament') : 'Aucun résultat',
+                                _query.isEmpty 
+                                  ? (allMeds.isEmpty ? 'Chargement...' : 'Aucun médicament') 
+                                  : 'Aucun résultat',
                                 style: TextStyle(color: context.colors.onSurfaceVariant),
                               ),
                             ),
@@ -101,8 +119,21 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
                                 child: Icon(Icons.medication, color: medColors.medicamentOnContainer),
                               ),
                               title: Text(med.nom, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: med.nomCommercial != null ? Text(med.nomCommercial!, style: TextStyle(color: medColors.medicamentPrimary, fontSize: 11)) : null,
-                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => MedicamentDetailScreen(medicament: med))),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (med.nomCommercial != null && med.nomCommercial!.isNotEmpty)
+                                    Text(
+                                      med.nomCommercial!,
+                                      style: TextStyle(color: medColors.medicamentPrimary, fontSize: 11, fontWeight: FontWeight.w600),
+                                    ),
+                                  Text(med.galenique, style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 12)),
+                                ],
+                              ),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => MedicamentDetailScreen(medicament: med)),
+                              ),
                             ),
                           );
                         },
@@ -116,7 +147,6 @@ class _TherapeutiqueScreenState extends State<TherapeutiqueScreen> {
   }
 }
 
-// Détail Medicament (Inclus ici pour simplifier le copier-coller, mais idéalement dans son propre fichier)
 class MedicamentDetailScreen extends StatelessWidget {
   final Medicament medicament;
   const MedicamentDetailScreen({super.key, required this.medicament});
@@ -124,89 +154,161 @@ class MedicamentDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final medColors = context.medicalColors;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(medicament.nom),
         backgroundColor: medColors.medicamentContainer,
         foregroundColor: medColors.medicamentOnContainer,
-        actions: const [Padding(padding: EdgeInsets.only(right: 8), child: Center(child: GlobalWeightSelectorCompact()))],
+        // CORRECTION ICI : Utilisation de GlobalWeightSelector (version complète)
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 8), 
+            child: GlobalWeightSelector(), 
+          )
+        ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (medicament.nomCommercial != null) _InfoBlock(title: "Commercial", content: medicament.nomCommercial!, color: medColors.medicamentPrimary),
-            const SizedBox(height: 12),
-            _InfoBlock(title: "Galénique", content: medicament.galenique, color: medColors.medicamentPrimary),
-            const SizedBox(height: 12),
-            ...medicament.indications.map((i) => IndicationCard(indication: i)),
+            if (medicament.nomCommercial != null)
+              _buildSection(context, icon: Icons.local_pharmacy, title: "Nom commercial", content: medicament.nomCommercial!, color: medColors.medicamentPrimary, bgColor: medColors.medicamentContainer),
+            if (medicament.nomCommercial != null) const SizedBox(height: 16),
+            
+            _buildSection(context, icon: Icons.medical_services, title: "Galénique", content: medicament.galenique, color: medColors.medicamentPrimary, bgColor: medColors.medicamentContainer),
+            const SizedBox(height: 16),
+            
+            ...medicament.indications.map((indication) => IndicationCard(indication: indication)),
+            
+            if (medicament.contreIndications != null) ...[
+              const SizedBox(height: 16),
+              _buildSection(context, icon: Icons.warning, title: "Contre-indications", content: medicament.contreIndications!, color: medColors.alertePrimary, bgColor: medColors.alerteContainer),
+            ],
+            if (medicament.aSavoir != null) ...[
+              const SizedBox(height: 16),
+              _buildSection(context, icon: Icons.lightbulb, title: "À savoir", content: medicament.aSavoir!, color: medColors.annuairePrimary, bgColor: medColors.annuaireContainer),
+            ],
           ],
         ),
       ),
     );
   }
-}
 
-class _InfoBlock extends StatelessWidget {
-  final String title;
-  final String content;
-  final Color color;
-  const _InfoBlock({required this.title, required this.content, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildSection(BuildContext context, {required IconData icon, required String title, required String content, required Color color, required Color bgColor}) {
     return Container(
-      width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        color: bgColor.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-        Text(content),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [Icon(icon, color: color, size: 20), const SizedBox(width: 8), Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color))]),
+          const SizedBox(height: 8),
+          Text(content, style: TextStyle(color: context.colors.onSurface)),
+        ],
+      ),
     );
   }
 }
 
-// IndicationCard est supposé être connu ou importé. Si manquant, il faut le rajouter ici.
-// Je le rajoute pour être sûr que le code compile.
 class IndicationCard extends StatefulWidget {
   final Indication indication;
   const IndicationCard({super.key, required this.indication});
+
   @override
   State<IndicationCard> createState() => _IndicationCardState();
 }
+
 class _IndicationCardState extends State<IndicationCard> {
-  bool isExpanded = true;
+  bool isExpanded = false;
+
   @override
   Widget build(BuildContext context) {
+    final colors = context.medicalColors;
+    
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ExpansionTile(
-        initiallyExpanded: true,
-        title: Text(widget.indication.label, style: const TextStyle(fontWeight: FontWeight.bold)),
-        children: widget.indication.posologies.map((p) => _PosoTile(posologie: p)).toList(),
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 0,
+      color: colors.annuaireContainer.withValues(alpha: 0.15),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: colors.annuairePrimary.withValues(alpha: 0.3))),
+      child: Column(
+        children: [
+          ListTile(
+            leading: Icon(Icons.local_hospital, color: colors.annuairePrimary, size: 20),
+            title: Text(widget.indication.label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.annuairePrimary)),
+            trailing: Icon(isExpanded ? Icons.expand_less : Icons.expand_more, color: colors.annuairePrimary),
+            onTap: () => setState(() => isExpanded = !isExpanded),
+          ),
+          if (isExpanded)
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(children: widget.indication.posologies.map((p) => _buildPosologieCard(context, p)).toList()),
+            ),
+        ],
       ),
     );
   }
-}
 
-class _PosoTile extends StatelessWidget {
-  final Posologie posologie;
-  const _PosoTile({required this.posologie});
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildPosologieCard(BuildContext context, Posologie posologie) {
+    final calcColors = context.medicalColors;
+    
     return Consumer<WeightProvider>(
-      builder: (context, wp, _) {
-        final dose = posologie.calculerDose(wp.weight ?? 10.0);
-        return ListTile(
-          title: Text(dose, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.purple)),
-          subtitle: Text('${posologie.voie} - ${posologie.preparation}'),
+      builder: (context, weightProvider, child) {
+        final poids = weightProvider.weight ?? 10.0;
+        final doseCalculee = posologie.calculerDose(poids);
+        String doseParKg = '';
+        if (posologie.doseKg != null) doseParKg = '(${posologie.doseKg} ${posologie.getUniteReference()})';
+
+        return Container(
+          margin: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: context.colors.surface, borderRadius: BorderRadius.circular(8), border: Border.all(color: context.colors.outlineVariant)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: calcColors.medicamentContainer, borderRadius: BorderRadius.circular(4)),
+                child: Text(posologie.voie, style: TextStyle(fontWeight: FontWeight.bold, color: calcColors.medicamentOnContainer)),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: calcColors.calculusContainer,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: calcColors.calculusPrimary.withValues(alpha: 0.5), width: 1.5),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.calculate, color: calcColors.calculusPrimary, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(doseCalculee, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: calcColors.calculusOnContainer)),
+                        if (doseParKg.isNotEmpty) Text(doseParKg, style: TextStyle(fontSize: 13, color: calcColors.calculusOnContainer.withValues(alpha: 0.7), fontStyle: FontStyle.italic)),
+                      ]),
+                    ),
+                  ],
+                ),
+              ),
+              if (posologie.preparation.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(children: [
+                  Icon(Icons.science, size: 16, color: context.colors.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(posologie.preparation, style: TextStyle(fontStyle: FontStyle.italic, color: context.colors.onSurface))),
+                ]),
+              ]
+            ],
+          ),
         );
-      }
+      },
     );
   }
 }

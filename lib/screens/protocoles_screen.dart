@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart'; // IMPORTANT
+import 'package:hive_flutter/hive_flutter.dart';
 import '../models/protocol_model.dart';
 import '../services/storage_service.dart';
 import '../services/data_sync_service.dart';
@@ -23,13 +23,11 @@ class _ProtocolesScreenState extends State<ProtocolesScreen> {
   Widget build(BuildContext context) {
     final protocolColors = context.medicalColors;
 
-    // 🔥 REACTIVITÉ : On écoute la boite Hive directement
     return ValueListenableBuilder<Box<Protocol>>(
       valueListenable: _storage.protocolListenable,
       builder: (context, box, _) {
         final allProtocols = box.values.toList();
         
-        // Logique de filtrage
         List<Protocol> filteredProtocols;
         if (_searchQuery.isEmpty) {
           filteredProtocols = allProtocols;
@@ -118,7 +116,6 @@ class _ProtocolesScreenState extends State<ProtocolesScreen> {
   }
 }
 
-// L'écran de détail reste le même, on l'inclut pour être complet
 class ProtocolDetailScreen extends StatelessWidget {
   final Protocol protocol;
   const ProtocolDetailScreen({super.key, required this.protocol});
@@ -131,7 +128,13 @@ class ProtocolDetailScreen extends StatelessWidget {
         title: Text(protocol.titre),
         backgroundColor: protocolColors.protocolContainer,
         foregroundColor: protocolColors.protocolOnContainer,
-        actions: const [Padding(padding: EdgeInsets.only(right: 8), child: Center(child: GlobalWeightSelectorCompact()))],
+        // CORRECTION ICI : Utilisation de GlobalWeightSelector (version complète)
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 8), 
+            child: GlobalWeightSelector(), 
+          )
+        ],
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
