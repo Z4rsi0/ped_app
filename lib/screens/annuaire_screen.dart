@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'models/annuaire_model.dart';
-import 'services/storage_service.dart';
-import 'services/data_sync_service.dart'; // Pour le refresh
-import 'theme/app_theme.dart';
+import '../models/annuaire_model.dart';
+import '../services/storage_service.dart';
+import '../services/data_sync_service.dart';
+import '../theme/app_theme.dart';
 
 class AnnuaireScreen extends StatefulWidget {
   const AnnuaireScreen({super.key});
@@ -27,11 +28,7 @@ class _AnnuaireScreenState extends State<AnnuaireScreen> {
     });
   }
 
-  void _toggleMode(bool interne) {
-    setState(() {
-      isInterne = interne;
-    });
-  }
+  void _toggleMode(bool interne) => setState(() => isInterne = interne);
 
   @override
   void dispose() {
@@ -43,156 +40,123 @@ class _AnnuaireScreenState extends State<AnnuaireScreen> {
   @override
   Widget build(BuildContext context) {
     final annuaireColors = context.medicalColors;
-    
-    // 1. Récupération instantanée
-    final annuaire = _storage.getAnnuaire();
-    List<Service> services = [];
-    if (annuaire != null) {
-      services = isInterne ? annuaire.interne : annuaire.externe;
-    }
 
-    // 2. Filtrage
-    List<Service> filteredServices;
-    if (_query.isEmpty) {
-      filteredServices = services;
-    } else {
-      final q = _query.toLowerCase();
-      filteredServices = services.where((s) {
-        if (s.nom.toLowerCase().contains(q)) return true;
-        if (s.description?.toLowerCase().contains(q) ?? false) return true;
-        for (var contact in s.contacts) {
-          if (contact.label?.toLowerCase().contains(q) ?? false) return true;
-          if (contact.numero.contains(q)) return true;
+    // 🔥 REACTIVITÉ HIVE
+    return ValueListenableBuilder<Box<Annuaire>>(
+      valueListenable: _storage.annuaireListenable,
+      builder: (context, box, _) {
+        final annuaire = box.isNotEmpty ? box.getAt(0) : null;
+        List<Service> services = [];
+        if (annuaire != null) {
+          services = isInterne ? annuaire.interne : annuaire.externe;
         }
-        return false;
-      }).toList();
-    }
 
-    return Scaffold(
-      body: Column(
-        children: [
-          // 1. Barre de recherche
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                labelText: "Rechercher un service ou contact",
-                prefixIcon: const Icon(Icons.search),
-                fillColor: context.colors.surfaceContainerHigh,
-                filled: true,
-                suffixIcon: searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          searchController.clear();
-                          _filterServices('');
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        List<Service> filteredServices;
+        if (_query.isEmpty) {
+          filteredServices = services;
+        } else {
+          final q = _query.toLowerCase();
+          filteredServices = services.where((s) {
+            if (s.nom.toLowerCase().contains(q)) return true;
+            if (s.description?.toLowerCase().contains(q) ?? false) return true;
+            for (var contact in s.contacts) {
+              if (contact.label?.toLowerCase().contains(q) ?? false) return true;
+              if (contact.numero.contains(q)) return true;
+            }
+            return false;
+          }).toList();
+        }
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: TextField(
+                controller: searchController,
+                decoration: InputDecoration(
+                  labelText: "Rechercher un service ou contact",
+                  prefixIcon: const Icon(Icons.search),
+                  fillColor: context.colors.surfaceContainerHigh,
+                  filled: true,
+                  suffixIcon: searchController.text.isNotEmpty ? IconButton(icon: const Icon(Icons.clear), onPressed: () { searchController.clear(); _filterServices(''); }) : null,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+                onChanged: _filterServices,
               ),
-              onChanged: _filterServices,
             ),
-          ),
-          
-          // 2. Sélecteur
-          _buildModeSelector(annuaireColors),
+            
+            _buildModeSelector(context, annuaireColors),
 
-          // 3. Liste
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                 await DataSyncService.syncAllData();
-                 if(mounted) setState(() {});
-              },
-              child: filteredServices.isEmpty
-                  ? ListView(
-                      children: [
-                         SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.5,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.search_off, size: 64, color: context.colors.outline),
-                                const SizedBox(height: 16),
-                                Text(
-                                  annuaire == null 
-                                    ? 'Annuaire non chargé' 
-                                    : 'Aucun service trouvé', 
-                                  style: TextStyle(fontSize: 16, color: context.colors.onSurfaceVariant)
-                                ),
-                              ],
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async => await DataSyncService.syncAllData(),
+                child: filteredServices.isEmpty
+                    ? ListView(
+                        children: [
+                           SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.5,
+                            child: Center(
+                              child: Text(annuaire == null ? 'Chargement...' : 'Aucun service', style: TextStyle(color: context.colors.onSurfaceVariant)),
                             ),
                           ),
-                        ),
-                      ],
-                    )
-                  : ListView.builder(
-                      itemCount: filteredServices.length,
-                      itemBuilder: (context, index) {
-                        return ServiceCard(
-                          key: ValueKey(filteredServices[index].nom),
-                          service: filteredServices[index],
-                        );
-                      },
-                    ),
+                        ],
+                      )
+                    : ListView.builder(
+                        itemCount: filteredServices.length,
+                        itemBuilder: (context, index) {
+                          return ServiceCard(
+                            key: ValueKey(filteredServices[index].nom),
+                            service: filteredServices[index],
+                          );
+                        },
+                      ),
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildModeSelector(MedicalColors colors) {
+  Widget _buildModeSelector(BuildContext context, MedicalColors colors) {
     return Container(
       color: colors.annuaireContainer.withValues(alpha: 0.3),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Expanded(child: _buildModeButton('Interne', isInterne, Icons.business, () => _toggleMode(true))),
+          Expanded(child: _buildModeButton(context, 'Interne', isInterne, Icons.business, () => _toggleMode(true))),
           const SizedBox(width: 12),
-          Expanded(child: _buildModeButton('Externe', !isInterne, Icons.public, () => _toggleMode(false))),
+          Expanded(child: _buildModeButton(context, 'Externe', !isInterne, Icons.public, () => _toggleMode(false))),
         ],
       ),
     );
   }
 
-  Widget _buildModeButton(String label, bool isActive, IconData icon, VoidCallback onTap) {
-    final annuaireColors = context.medicalColors;
-    
+  Widget _buildModeButton(BuildContext context, String label, bool isActive, IconData icon, VoidCallback onTap) {
+    final colors = context.medicalColors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isActive ? annuaireColors.annuairePrimary : context.colors.surface,
+          color: isActive ? colors.annuairePrimary : context.colors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isActive ? annuaireColors.annuairePrimary : context.colors.outline,
-            width: 2,
-          ),
+          border: Border.all(color: isActive ? colors.annuairePrimary : context.colors.outline, width: 2),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: isActive ? Colors.white : context.colors.onSurface),
             const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: isActive ? Colors.white : context.colors.onSurface,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
+            Text(label, style: TextStyle(color: isActive ? Colors.white : context.colors.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
       ),
     );
   }
 }
+
+// --- PARTIE CARTES DÉTAILLÉES (Style v1 restauré) ---
 
 class ServiceCard extends StatefulWidget {
   final Service service;
@@ -214,10 +178,7 @@ class _ServiceCardState extends State<ServiceCard> {
         child: Column(
           children: [
             ListTile(
-              leading: CircleAvatar(
-                backgroundColor: annuaireColors.annuaireContainer,
-                child: Icon(Icons.phone_in_talk, color: annuaireColors.annuaireOnContainer),
-              ),
+              leading: CircleAvatar(backgroundColor: annuaireColors.annuaireContainer, child: Icon(Icons.phone_in_talk, color: annuaireColors.annuaireOnContainer)),
               title: Text(widget.service.nom, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               subtitle: widget.service.description != null ? Text(widget.service.description!, style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 13)) : null,
               trailing: Icon(isExpanded ? Icons.expand_less : Icons.expand_more, color: annuaireColors.annuairePrimary),
@@ -225,13 +186,8 @@ class _ServiceCardState extends State<ServiceCard> {
             ),
             if (isExpanded)
               Container(
-                decoration: BoxDecoration(
-                  color: annuaireColors.annuaireContainer.withValues(alpha: 0.1),
-                  border: Border(top: BorderSide(color: context.colors.outlineVariant)),
-                ),
-                child: Column(
-                  children: widget.service.contacts.map((contact) => ContactTile(key: ValueKey(contact.numero), contact: contact)).toList(),
-                ),
+                decoration: BoxDecoration(color: annuaireColors.annuaireContainer.withValues(alpha: 0.1), border: Border(top: BorderSide(color: context.colors.outlineVariant))),
+                child: Column(children: widget.service.contacts.map((contact) => ContactTile(key: ValueKey(contact.numero), contact: contact)).toList()),
               ),
           ],
         ),
@@ -244,6 +200,7 @@ class ContactTile extends StatelessWidget {
   final Contact contact;
   const ContactTile({super.key, required this.contact});
 
+  // Règle stricte demandée : 10 chiffres pour être cliquable
   bool _isDialable(String numero) => numero.replaceAll(RegExp(r'[^\d]'), '').length == 10;
   
   IconData _getIcon(String numero, String? type) {
