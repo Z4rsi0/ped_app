@@ -23,13 +23,14 @@ class ProtocolAdapter extends TypeAdapter<Protocol> {
       version: fields[3] as String?,
       dateModification: fields[4] as DateTime?,
       blocs: (fields[5] as List).cast<ProtocolBlock>(),
+      categorie: fields[6] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Protocol obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.titre)
       ..writeByte(1)
@@ -41,7 +42,9 @@ class ProtocolAdapter extends TypeAdapter<Protocol> {
       ..writeByte(4)
       ..write(obj.dateModification)
       ..writeByte(5)
-      ..write(obj.blocs);
+      ..write(obj.blocs)
+      ..writeByte(6)
+      ..write(obj.categorie);
   }
 
   @override

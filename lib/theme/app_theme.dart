@@ -13,17 +13,22 @@ class MedicalColors extends ThemeExtension<MedicalColors> {
   final Color protocolContainer;
   final Color protocolOnContainer;
 
-  // Sémantique : Annuaire / Validé (Vert)
+  // Sémantique : Annuaire (Vert)
   final Color annuairePrimary;
   final Color annuaireContainer;
   final Color annuaireOnContainer;
 
-  // Sémantique : Posologie / Calcul (Violet)
+  // Sémantique : Calculs (Violet)
   final Color calculusPrimary;
   final Color calculusContainer;
   final Color calculusOnContainer;
 
-  // Sémantique : Alerte / Danger (Rouge)
+  // NOUVEAU : Sémantique Pocus (Teal / Sarcelle)
+  final Color pocusPrimary;
+  final Color pocusContainer;
+  final Color pocusOnContainer;
+
+  // Sémantique : Alerte (Rouge)
   final Color alertePrimary;
   final Color alerteContainer;
   final Color alerteOnContainer;
@@ -41,6 +46,9 @@ class MedicalColors extends ThemeExtension<MedicalColors> {
     required this.calculusPrimary,
     required this.calculusContainer,
     required this.calculusOnContainer,
+    required this.pocusPrimary,     // Nouveau champ
+    required this.pocusContainer,   // Nouveau champ
+    required this.pocusOnContainer, // Nouveau champ
     required this.alertePrimary,
     required this.alerteContainer,
     required this.alerteOnContainer,
@@ -60,6 +68,9 @@ class MedicalColors extends ThemeExtension<MedicalColors> {
     Color? calculusPrimary,
     Color? calculusContainer,
     Color? calculusOnContainer,
+    Color? pocusPrimary,
+    Color? pocusContainer,
+    Color? pocusOnContainer,
     Color? alertePrimary,
     Color? alerteContainer,
     Color? alerteOnContainer,
@@ -77,6 +88,9 @@ class MedicalColors extends ThemeExtension<MedicalColors> {
       calculusPrimary: calculusPrimary ?? this.calculusPrimary,
       calculusContainer: calculusContainer ?? this.calculusContainer,
       calculusOnContainer: calculusOnContainer ?? this.calculusOnContainer,
+      pocusPrimary: pocusPrimary ?? this.pocusPrimary,
+      pocusContainer: pocusContainer ?? this.pocusContainer,
+      pocusOnContainer: pocusOnContainer ?? this.pocusOnContainer,
       alertePrimary: alertePrimary ?? this.alertePrimary,
       alerteContainer: alerteContainer ?? this.alerteContainer,
       alerteOnContainer: alerteOnContainer ?? this.alerteOnContainer,
@@ -101,6 +115,9 @@ class MedicalColors extends ThemeExtension<MedicalColors> {
       calculusPrimary: Color.lerp(calculusPrimary, other.calculusPrimary, t)!,
       calculusContainer: Color.lerp(calculusContainer, other.calculusContainer, t)!,
       calculusOnContainer: Color.lerp(calculusOnContainer, other.calculusOnContainer, t)!,
+      pocusPrimary: Color.lerp(pocusPrimary, other.pocusPrimary, t)!,
+      pocusContainer: Color.lerp(pocusContainer, other.pocusContainer, t)!,
+      pocusOnContainer: Color.lerp(pocusOnContainer, other.pocusOnContainer, t)!,
       alertePrimary: Color.lerp(alertePrimary, other.alertePrimary, t)!,
       alerteContainer: Color.lerp(alerteContainer, other.alerteContainer, t)!,
       alerteOnContainer: Color.lerp(alerteOnContainer, other.alerteOnContainer, t)!,
@@ -126,6 +143,11 @@ class AppTheme {
     calculusPrimary: Color(0xFF7B1FA2),
     calculusContainer: Color(0xFFE1BEE7),
     calculusOnContainer: Color(0xFF4A148C),
+
+    // POCUS : Teal (Imagerie)
+    pocusPrimary: Color(0xFF00796B),
+    pocusContainer: Color(0xFFB2DFDB),
+    pocusOnContainer: Color(0xFF004D40),
     
     alertePrimary: Color(0xFFD32F2F),
     alerteContainer: Color(0xFFFFCDD2),
@@ -150,6 +172,11 @@ class AppTheme {
     calculusContainer: Color(0xFF4A148C),
     calculusOnContainer: Color(0xFFF3E5F5),
 
+    // POCUS Dark
+    pocusPrimary: Color(0xFF80CBC4),
+    pocusContainer: Color(0xFF004D40),
+    pocusOnContainer: Color(0xFFE0F2F1),
+
     alertePrimary: Color(0xFFEF9A9A),
     alerteContainer: Color(0xFF5F1E1E),
     alerteOnContainer: Color(0xFFFFEBEE),
@@ -171,7 +198,6 @@ class AppTheme {
         foregroundColor: Colors.black,
         iconTheme: IconThemeData(color: Colors.black87),
       ),
-      // CORRECTION ICI : Utilisation de CardThemeData
       cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -198,7 +224,6 @@ class AppTheme {
         backgroundColor: Color(0xFF1E1E1E),
         foregroundColor: Colors.white,
       ),
-      // CORRECTION ICI : Utilisation de CardThemeData
       cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -209,7 +234,6 @@ class AppTheme {
   }
 }
 
-// Extension helper
 extension AppThemeExtension on BuildContext {
   ThemeData get theme => Theme.of(this);
   MedicalColors get medicalColors => Theme.of(this).extension<MedicalColors>()!;

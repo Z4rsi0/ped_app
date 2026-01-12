@@ -25,6 +25,9 @@ class Protocol {
   @HiveField(5)
   final List<ProtocolBlock> blocs;
 
+  @HiveField(6)
+  final String? categorie;
+
   Protocol({
     required this.titre,
     required this.description,
@@ -32,6 +35,7 @@ class Protocol {
     this.version,
     this.dateModification,
     required this.blocs,
+    this.categorie,
   });
 
   factory Protocol.fromJson(Map<String, dynamic> json) {
@@ -47,6 +51,7 @@ class Protocol {
               ?.map((b) => ProtocolBlock.fromJson(b as Map<String, dynamic>))
               .toList() ??
           [],
+      categorie: json['categorie']
     );
   }
 
@@ -59,6 +64,7 @@ class Protocol {
       if (dateModification != null)
         'dateModification': dateModification!.toIso8601String(),
       'blocs': blocs.map((b) => b.toJson()).toList(),
+      if (categorie != null && categorie!.isNotEmpty) 'categorie': categorie,
     };
   }
 
