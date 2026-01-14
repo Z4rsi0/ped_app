@@ -5,7 +5,8 @@ import 'package:provider/provider.dart';
 import '../models/protocol_model.dart';
 import '../providers/weight_provider.dart';
 import '../services/medicament_resolver.dart';
-import '../theme/app_theme.dart'; // Import du Design System
+import '../theme/app_theme.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 /// Widget racine pour rendre un bloc
 class ProtocolBlockWidget extends StatelessWidget {
@@ -180,34 +181,52 @@ class TexteBlockWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Style par défaut venant du thème (gère le noir/blanc auto)
-    TextStyle style = context.textTheme.bodyMedium!.copyWith(height: 1.5);
+    // 1. Définir le style de base selon le thème de l'app
+    TextStyle baseStyle = context.textTheme.bodyMedium!.copyWith(height: 1.5);
 
+    // 2. Appliquer les surcharges du modèle TexteFormat (si présent)
     if (block.format != null) {
-      style = style.copyWith(
+      baseStyle = baseStyle.copyWith(
+        // Si le bloc est marqué "Gras" globalement, tout le texte le sera.
+        // Sinon, le Markdown gérera le gras localement (**text**).
         fontWeight: block.format!.gras ? FontWeight.bold : null,
         fontStyle: block.format!.italique ? FontStyle.italic : null,
         decoration: block.format!.souligne ? TextDecoration.underline : null,
         color: block.format!.couleur != null
             ? _parseColor(block.format!.couleur!)
-            : null, // Si null, garde la couleur par défaut du thème
+            : null,
         fontSize: block.format!.taillePolicePx,
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: SelectableText(
-        block.contenu,
-        style: style,
+    // 3. Rendu Markdown
+    // SelectionArea permet de sélectionner/copier le texte comme avec SelectableText
+    return SelectionArea(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: MarkdownBody(
+          data: block.contenu,
+          // On injecte notre style calculé dans la feuille de style Markdown
+          styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+            p: baseStyle, // Style du texte standard
+            // On peut aussi personnaliser les styles spécifiques si besoin :
+            strong: baseStyle.copyWith(fontWeight: FontWeight.bold),
+            em: baseStyle.copyWith(fontStyle: FontStyle.italic),
+            listBullet: baseStyle,
+          ),
+        ),
       ),
     );
   }
 
   Color? _parseColor(String colorStr) {
     try {
-      if (colorStr.startsWith('#')) {
-        return Color(int.parse('FF${colorStr.substring(1)}', radix: 16));
+      // Nettoyage au cas où (ex: #FF0000 -> FF0000)
+      final hexCode = colorStr.replaceAll('#', '');
+      if (hexCode.length == 6) {
+        return Color(int.parse('FF$hexCode', radix: 16));
+      } else if (hexCode.length == 8) {
+        return Color(int.parse(hexCode, radix: 16));
       }
       return null;
     } catch (e) {
