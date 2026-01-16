@@ -4,12 +4,25 @@ import 'dart:async';
 // --- CONFIGURATION ---
 const String deviceId = '23078PND5G'; // Ton ID de device spécifique
 
+// Variable globale pour stocker le chemin racine du projet
+late String projectRoot;
+
 void main() async {
-  // On s'assure d'être dans le bon dossier
-  if (!File('pubspec.yaml').existsSync()) {
-    print('❌ Erreur : Ce script doit être lancé depuis la racine du projet Flutter.');
+  // 1. Calculer la racine du projet (Le dossier parent de ce script)
+  // On prend le chemin du script en cours, on récupère son dossier (tool), puis le parent (ped_app)
+  final scriptFile = File(Platform.script.toFilePath());
+  projectRoot = scriptFile.parent.parent.path;
+
+  // 2. Vérification de sécurité
+  final pubspec = File('$projectRoot/pubspec.yaml');
+  if (!pubspec.existsSync()) {
+    print('❌ Erreur critique : Impossible de localiser la racine du projet.');
+    print('   Chemin calculé : $projectRoot');
+    print('   Vérifiez que ce script est bien dans le dossier /tool/ du projet.');
     exit(1);
   }
+
+  print('📂 Racine du projet détectée : $projectRoot');
 
   // Définition des options du menu
   final options = [
@@ -40,15 +53,17 @@ void main() async {
     ),
   ];
 
-  // Affichage du menu
+  // Affichage du menu (Boucle)
   int selectedIndex = -1;
   while (selectedIndex < 0 || selectedIndex >= options.length) {
-    // Nettoyage console (compatible Windows/Mac/Linux)
     if (Platform.isWindows) {
-      // Sur Windows, on imprime juste des sauts de ligne pour "vider" visuellement
-      print('\n' * 50);
+      print('\n' * 5); // Saut de ligne simple sur Windows
     } else {
-      stdout.write('\x1B[2J\x1B[0;0H');
+      try {
+        stdout.write('\x1B[2J\x1B[0;0H'); // Clear console UNIX
+      } catch (e) {
+        print('\n' * 20);
+      }
     }
 
     _printHeader();
@@ -58,7 +73,7 @@ void main() async {
       if (options[i].description.isNotEmpty) {
         print('      Run: ${options[i].description}');
       }
-      print(''); // Ligne vide
+      print('');
     }
 
     stdout.write('👉 Choisissez une option (1-${options.length}) : ');
@@ -72,7 +87,7 @@ void main() async {
     }
   }
   
-  // Exécution de l'action choisie
+  // Exécution
   print('\n🔄 Lancement de : ${options[selectedIndex].label}...\n');
   final success = await options[selectedIndex].action();
 
@@ -87,25 +102,23 @@ void main() async {
 
 void _printHeader() {
   print('╔══════════════════════════════════════════════════════════════╗');
-  print('║               🛠️  PED APP - BUILD MENU  🛠️                 ║');
+  print('║              🛠️  PED APP - BUILD MENU  🛠️                 ║');
   print('╚══════════════════════════════════════════════════════════════╝');
   print('');
 }
 
 // --- PIPELINES SPÉCIFIQUES ---
 
-/// Pipeline Web complet : Update Data -> Build -> Deploy
 Future<bool> _runWebPipeline() async {
-  // 1. Mise à jour des données (Script Dart)
+  // Note : On utilise 'dart run tool/...' car on est positionné à la racine grâce à workingDirectory
   print('1️⃣  [1/3] Mise à jour des données Web...');
   if (!await _runCommand('dart', ['run', 'tool/update_web_data.dart'])) return false;
 
-  // 2. Build Web
   print('\n2️⃣  [2/3] Compilation Web (Release)...');
   if (!await _runCommand('flutter', ['build', 'web', '--release'])) return false;
 
-  // 3. Deploy Firebase
   print('\n3️⃣  [3/3] Déploiement Firebase...');
+  // Sur Windows, 'firebase' est souvent un script batch, runInShell est crucial
   if (!await _runCommand('firebase', ['deploy'])) {
     return false;
   }
@@ -120,12 +133,14 @@ Future<bool> _runCommand(String executable, List<String> args) async {
     final process = await Process.start(
       executable,
       args,
-      mode: ProcessStartMode.inheritStdio, 
+      mode: ProcessStartMode.inheritStdio,
+      workingDirectory: projectRoot, // ✅ FORCE l'exécution dans le dossier racine
+      runInShell: true,              // ✅ INDISPENSABLE pour trouver les commandes (flutter, firebase...)
     );
     final exitCode = await process.exitCode;
     return exitCode == 0;
   } catch (e) {
-    print('Erreur lors de l\'exécution de $executable: $e');
+    print('❌ Erreur système lors de l\'exécution de $executable: $e');
     return false;
   }
 }
