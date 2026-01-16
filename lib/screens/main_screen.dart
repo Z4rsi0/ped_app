@@ -5,6 +5,7 @@ import 'pocus_screen.dart'; // Import du nouvel écran
 import 'annuaire_screen.dart';
 import '../services/data_sync_service.dart';
 import '../widgets/global_weight_selector.dart';
+import 'tox_screen.dart'; // Ajoute cet import en haut
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -22,13 +23,15 @@ class _MainScreenState extends State<MainScreen> {
     ProtocolesScreen(),
     PocusScreen(), // Nouvel onglet
     AnnuaireScreen(),
+    ToxScreen(), // Ajoute l'écran de toxicologie ici
   ];
 
   final List<String> _titles = [
     'Thérapeutique', 
     'Protocoles', 
     'Pocus / Écho', // Titre Pocus
-    'Annuaire'
+    'Annuaire',
+    'Toxicologie', // Titre Toxicologie
   ];
 
   @override
@@ -99,6 +102,11 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.contacts_outlined),
             selectedIcon: Icon(Icons.contacts),
             label: 'Annuaire',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.science_outlined),
+            selectedIcon: Icon(Icons.science),
+            label: 'Toxicologie',
           ),
         ],
       ),

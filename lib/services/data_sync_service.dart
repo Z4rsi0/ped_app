@@ -8,35 +8,35 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/medication_model.dart';
 import '../models/protocol_model.dart';
 import '../models/annuaire_model.dart';
+import '../models/toxic_agent.dart'; // Import du modèle ToxicAgent
 import 'storage_service.dart';
 import '../utils/string_utils.dart';
 
 class DataSyncService {
   // --- CONFIGURATION ---
-  
-  // URL de base pour GitHub (Mobile uniquement)
   static const String githubApiBase = 'https://api.github.com/repos/Z4rsi0/ped_app_data/contents';
   static const String githubBranch = 'main';
   
   // Chemins distants GitHub
   static const String pathMedicaments = 'assets/medicaments_pediatrie.json';
   static const String pathAnnuaire = 'assets/annuaire.json';
+  static const String pathToxiques = 'assets/toxiques.json'; // NOUVEAU
+  
   static const String dirProtocoles = 'assets/protocoles'; 
   static const String dirPocus = 'assets/pocus';
 
-  // URL relative pour le Web (pointe vers le dossier web/data/ de ton projet)
+  // URL relative pour le Web
   static const String webBasePath = 'data';
 
   static const String _prefShaPrefix = 'sha_';
 
   /// Point d'entrée principal
   static Future<SyncResult> syncAllData() async {
-    // SÉPARATION DES MONDES 🌍 vs 📱
     if (kIsWeb) {
-      debugPrint('🌐 Mode Web détecté : Chargement via HTTP local (web/data)...');
+      debugPrint('🌐 Mode Web : Chargement via HTTP local...');
       return await _loadFromWebFolder();
     } else {
-      debugPrint('📱 Mode Mobile détecté : Synchronisation GitHub...');
+      debugPrint('📱 Mode Mobile : Synchronisation GitHub...');
       return await _syncFromGithub();
     }
   }
@@ -51,14 +51,10 @@ class DataSyncService {
     List<String> errors = [];
     final storage = StorageService();
 
-    // Helper pour charger un fichier JSON via HTTP relatif
     Future<dynamic> loadLocalJson(String path) async {
-      // Sur le web, "data/fichier.json" est une URL relative à index.html
       final url = Uri.parse('$webBasePath/$path');
       final response = await http.get(url);
-      
       if (response.statusCode == 200) {
-        // Décodage UTF8 explicite pour les accents
         return jsonDecode(utf8.decode(response.bodyBytes));
       }
       throw Exception("Fichier introuvable ($path) : ${response.statusCode}");
@@ -73,7 +69,6 @@ class DataSyncService {
     } catch (e) {
       failed++;
       errors.add("Web Medicaments: $e");
-      debugPrint("❌ Erreur Web Medicaments: $e");
     }
 
     // 2. Annuaire
@@ -84,60 +79,55 @@ class DataSyncService {
     } catch (e) {
       failed++;
       errors.add("Web Annuaire: $e");
-      debugPrint("❌ Erreur Web Annuaire: $e");
     }
 
-    // 3. Charger le Listing (généré par ton script tool/update_web_data.dart)
+    // 3. NOUVEAU : Toxiques
+    try {
+      final jsonList = await loadLocalJson('toxiques.json');
+      final list = (jsonList as List).map((e) => ToxicAgent.fromJson(e)).toList();
+      await storage.saveToxicAgents(list);
+      success++;
+    } catch (e) {
+      // Pas critique pour l'instant si le fichier n'est pas encore là
+      debugPrint("Info: Pas de toxiques.json trouvé en Web (ou erreur format)");
+      errors.add("Web Toxiques: $e");
+    }
+
+    // 4. Listing pour les dossiers
     Map<String, dynamic> listing = {};
     try {
       listing = await loadLocalJson('listing.json');
     } catch (e) {
-      errors.add("listing.json manquant ! Impossible de charger les protocoles.");
-      debugPrint("❌ Erreur critique : listing.json introuvable. As-tu lancé le script de mise à jour ?");
+      errors.add("listing.json manquant !");
     }
 
-    // Helper pour charger un dossier entier grâce au listing
     Future<int> loadFolder(String folderKey, Function(List<Protocol>) onSave) async {
       if (!listing.containsKey(folderKey)) return 0;
-      
       List<dynamic> files = listing[folderKey];
       List<Protocol> protocols = [];
-      
       for (var fileName in files) {
         try {
-          // Ex: data/protocoles/asthme.json
           final jsonP = await loadLocalJson('$folderKey/$fileName');
           protocols.add(Protocol.fromJson(jsonP));
-        } catch (e) {
-          debugPrint("⚠️ Erreur chargement protocole $fileName: $e");
-        }
+        } catch (e) { debugPrint("⚠️ Erreur $fileName: $e"); }
       }
-      
       if (protocols.isNotEmpty) await onSave(protocols);
       return protocols.length;
     }
 
-    // 4. Protocoles
     try {
       success += await loadFolder('protocoles', (l) => storage.saveProtocols(l));
-    } catch (e) {
-      failed++;
-      errors.add("Web Protocoles: $e");
-    }
+    } catch (e) { failed++; }
 
-    // 5. Pocus
     try {
       success += await loadFolder('pocus', (l) => storage.savePocusProtocols(l));
-    } catch (e) {
-      failed++;
-      errors.add("Web Pocus: $e");
-    }
+    } catch (e) { failed++; }
 
     return SyncResult(success: success, failed: failed, errors: errors, isOffline: true);
   }
 
   // ===========================================================================
-  // 🟠 MODE MOBILE (Ton code original GitHub)
+  // 🟠 MODE MOBILE (GitHub)
   // ===========================================================================
 
   static Future<SyncResult> _syncFromGithub() async {
@@ -181,7 +171,21 @@ class DataSyncService {
       errors.add('Annuaire: $e');
     }
 
-    // C. Protocoles
+    // C. NOUVEAU : Toxiques
+    try {
+      final changed = await _syncSingleFile<List<ToxicAgent>>(
+        path: pathToxiques,
+        prefs: prefs,
+        parser: (json) => (json as List).map((e) => ToxicAgent.fromJson(e)).toList(),
+        onSave: (data) => storage.saveToxicAgents(data),
+      );
+      if (changed) success++; else skipped++;
+    } catch (e) {
+      failed++;
+      errors.add('Toxiques: $e');
+    }
+
+    // D. Dossiers (Protocoles & Pocus)
     try {
       final protoResult = await _syncFolderFromGithub(
         storage: storage,
@@ -198,7 +202,6 @@ class DataSyncService {
       errors.add('Protocoles: $e');
     }
 
-    // D. POCUS
     try {
       final pocusResult = await _syncFolderFromGithub(
         storage: storage,
@@ -218,7 +221,7 @@ class DataSyncService {
     return SyncResult(success: success, failed: failed, errors: errors);
   }
 
-  // --- HELPERS GITHUB (Identiques à avant) ---
+  // --- HELPERS (Inchangés) ---
   
   static Future<bool> _syncSingleFile<T>({
     required String path,
@@ -295,15 +298,12 @@ class DataSyncService {
                downloadedCount++;
                listHasChanged = true;
              }
-          } catch (e) {
-            debugPrint('⚠️ Erreur download $name: $e');
-          }
+          } catch (e) { debugPrint('⚠️ Erreur download $name: $e'); }
         }
       }
     }
 
     if (listHasChanged) await onSave(itemsMap.values.toList());
-
     return (downloaded: downloadedCount, skipped: skippedCount);
   }
 
@@ -347,19 +347,6 @@ class SyncResult {
   final int failed;
   final List<String> errors;
   final bool isOffline;
-
-  SyncResult({
-    required this.success, 
-    required this.failed, 
-    required this.errors,
-    this.isOffline = false,
-  });
-  
+  SyncResult({required this.success, required this.failed, required this.errors, this.isOffline = false});
   bool get hasErrors => failed > 0;
-  String get message {
-    if (isOffline) return 'Mode Offline (Web)';
-    if (success == 0 && failed == 0) return 'Données à jour';
-    if (failed == 0) return 'Mise à jour effectuée ($success fichiers)';
-    return 'Mise à jour partielle ($failed erreurs)';
-  }
 }

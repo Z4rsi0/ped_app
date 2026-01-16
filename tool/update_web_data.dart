@@ -5,20 +5,19 @@ import 'package:http/http.dart' as http;
 // --- CONFIGURATION ---
 const String repoOwner = 'Z4rsi0';
 const String repoName = 'ped_app_data';
-const String branch = 'main'; // Vérifie si c'est 'main' ou 'master'
+const String branch = 'main'; 
 const String targetDir = 'web/data';
 
 // --- MAIN ---
 void main() async {
   print('🚀 Démarrage de la mise à jour des données Web...');
 
-  // 1. Récupérer le Token (indispensable pour les repos privés et éviter les limites API)
   final token = _getEnvToken();
   if (token == null) {
-    print('⚠️ ATTENTION : Pas de GITHUB_TOKEN trouvé dans .env. Les appels peuvent échouer si le repo est privé.');
+    print('⚠️ ATTENTION : Pas de GITHUB_TOKEN trouvé dans .env.');
   }
 
-  // 2. Nettoyer le dossier cible
+  // Nettoyage
   final dir = Directory(targetDir);
   if (dir.existsSync()) {
     dir.deleteSync(recursive: true);
@@ -29,43 +28,40 @@ void main() async {
   final Map<String, dynamic> listing = {};
 
   try {
-    // 3. Télécharger les fichiers racines
+    // 1. Fichiers Racines (Ajout de toxiques.json ici)
     await _downloadFile('assets/annuaire.json', 'annuaire.json', token);
     await _downloadFile('assets/medicaments_pediatrie.json', 'medicaments_pediatrie.json', token);
+    // NOUVEAU : Téléchargement des toxiques
+    await _downloadFile('assets/toxiques.json', 'toxiques.json', token);
 
-    // 4. Télécharger les dossiers et construire le listing
+    // 2. Dossiers
     listing['protocoles'] = await _downloadFolder('assets/protocoles', 'protocoles', token);
     listing['pocus'] = await _downloadFolder('assets/pocus', 'pocus', token);
 
-    // 5. Générer listing.json
+    // 3. Génération listing
     final listingFile = File('$targetDir/listing.json');
     listingFile.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(listing));
-    print('✅ listing.json généré avec succès.');
+    print('✅ listing.json généré.');
 
-    print('\n🎉 Terminé ! Les données sont prêtes pour "flutter build web".');
+    print('\n🎉 Terminé ! Les données (y compris toxiques) sont prêtes.');
   } catch (e) {
     print('\n❌ ERREUR FATALE : $e');
     exit(1);
   }
 }
 
-// --- FONCTIONS UTILITAIRES ---
+// --- UTILITAIRES ---
 
-/// Lit le token depuis le fichier .env sans dépendance Flutter
 String? _getEnvToken() {
   final envFile = File('.env');
   if (!envFile.existsSync()) return null;
-  
   final lines = envFile.readAsLinesSync();
   for (var line in lines) {
-    if (line.startsWith('GITHUB_TOKEN=')) {
-      return line.split('=')[1].trim();
-    }
+    if (line.startsWith('GITHUB_TOKEN=')) return line.split('=')[1].trim();
   }
   return null;
 }
 
-/// Télécharge un fichier unique
 Future<void> _downloadFile(String remotePath, String localName, String? token) async {
   final url = Uri.parse('https://api.github.com/repos/$repoOwner/$repoName/contents/$remotePath?ref=$branch');
   final response = await http.get(url, headers: _headers(token));
@@ -80,7 +76,6 @@ Future<void> _downloadFile(String remotePath, String localName, String? token) a
   print('⬇️ Téléchargé : $localName');
 }
 
-/// Télécharge tout un dossier et retourne la liste des fichiers
 Future<List<String>> _downloadFolder(String remoteDir, String localSubDir, String? token) async {
   final url = Uri.parse('https://api.github.com/repos/$repoOwner/$repoName/contents/$remoteDir?ref=$branch');
   final response = await http.get(url, headers: _headers(token));
@@ -90,17 +85,13 @@ Future<List<String>> _downloadFolder(String remoteDir, String localSubDir, Strin
   final List<dynamic> files = jsonDecode(response.body);
   final List<String> downloadedFiles = [];
 
-  // Créer le sous-dossier local (ex: web/data/protocoles)
   Directory('$targetDir/$localSubDir').createSync(recursive: true);
 
   for (var file in files) {
     if (file['type'] == 'file' && file['name'].toString().endsWith('.json')) {
       final name = file['name'];
       final downloadUrl = file['download_url'];
-      
-      // Téléchargement du contenu brut
       final contentResp = await http.get(Uri.parse(downloadUrl), headers: _headers(token));
-      
       File('$targetDir/$localSubDir/$name').writeAsStringSync(utf8.decode(contentResp.bodyBytes));
       downloadedFiles.add(name);
       print('  📄 $localSubDir/$name');
@@ -109,9 +100,7 @@ Future<List<String>> _downloadFolder(String remoteDir, String localSubDir, Strin
   return downloadedFiles;
 }
 
-Map<String, String> _headers(String? token) {
-  return {
-    'Accept': 'application/vnd.github.v3+json',
-    if (token != null) 'Authorization': 'Bearer $token',
-  };
-}
+Map<String, String> _headers(String? token) => {
+  'Accept': 'application/vnd.github.v3+json',
+  if (token != null) 'Authorization': 'Bearer $token',
+};
