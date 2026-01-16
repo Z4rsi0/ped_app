@@ -60,3 +60,4 @@ app.*.map.json
 
 /assets/*
 /assets/protocoles/*
+/web/*
